@@ -55,7 +55,7 @@ export const registerUser = expressAsyncHandler(async (req, res) => {
             email: createdUser.email,
             role : createdUser.role
         }
-    },process.env.ACCESS_TOKEN_SECRET,{expiresIn:'1h'});
+    },process.env.ACCESS_TOKEN_SECRET,{expiresIn:'7d'});
 
     res.status(201).json({_id: newUser.id , accessToken});
 });
@@ -83,7 +83,7 @@ export const loginUser = expressAsyncHandler(async (req, res) => {
                     email: user.email,
                     role : user.role
                 }
-            },process.env.ACCESS_TOKEN_SECRET,{expiresIn:'1h'});
+            },process.env.ACCESS_TOKEN_SECRET,{expiresIn:'7d'});
 
         res.status(200).json({accessToken});
     }else{

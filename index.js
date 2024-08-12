@@ -1,5 +1,6 @@
 import express from 'express';
 import dotenv from 'dotenv';
+import cors from 'cors';
 import errorHandler from './src/middleware/errorHandler.js'
 import connectDB from './src/db/db.js';
 
@@ -11,6 +12,11 @@ dotenv.config();
 
 const app = express();
 const port = process.env.PORT || 3000;
+
+app.use(cors({
+  origin: 'http://localhost:3001', // Frontend origin
+  credentials: true // Allow cookies to be sent
+}));
 
 // Connect to database
 connectDB();
