@@ -123,6 +123,19 @@ export const getUser = expressAsyncHandler(async(req, res)=>{
 });
 
 //@desc Follow User
+//@route POST/api/user/:id/getfollowers
+//@access public
+export const getfollowers = expressAsyncHandler(async(req, res)=>{
+    const { userId } = req.params;
+    const user = await User.findById(userId)
+    if (!user) {
+        res.status(404);
+        throw new Error('User not found');
+    }
+    res.status(200).json(user.followers);
+});
+
+//@desc Follow User
 //@route POST/api/user/:id/follow
 //@access private
 export const followUser = expressAsyncHandler(async (req , res) => {
@@ -164,7 +177,7 @@ export const followUser = expressAsyncHandler(async (req , res) => {
 //@route DELETE/api/user/:id/Unfollow
 //@access private
 export const unFollowUser = expressAsyncHandler(async (req , res) => {
-    const userIdToUnfollow = req.params.id;
+    const userIdToUnfollow = req.params.userId;
     const currentUserId = req.user.id;
 
     const userToUnfollow = await User.findById(userIdToUnfollow);

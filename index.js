@@ -1,8 +1,8 @@
 import express from 'express';
 import dotenv from 'dotenv';
-import cors from 'cors';
-import errorHandler from './src/middleware/errorHandler.js'
+import errorHandler from './src/middleware/errorHandler.js';
 import connectDB from './src/db/db.js';
+import cookieParser from 'cookie-parser';
 
 import postRoutes from './src/routes/postRoutes.js';
 import userRoutes from './src/routes/userRoutes.js';
@@ -13,16 +13,12 @@ dotenv.config();
 const app = express();
 const port = process.env.PORT || 3000;
 
-app.use(cors({
-  origin: 'http://localhost:3001', // Frontend origin
-  credentials: true // Allow cookies to be sent
-}));
-
 // Connect to database
 connectDB();
 
 // Middleware
 app.use(express.json());
+app.use(cookieParser());
 
 // Routes
 app.use('/api/user', userRoutes);
