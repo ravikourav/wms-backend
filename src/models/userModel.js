@@ -20,6 +20,9 @@ const userSchema = new mongoose.Schema({
         required: [true, 'Please enter password'],
         minlength: 6 // Example validation
     },
+    avatar:{
+        type: String
+    },
     followers: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'

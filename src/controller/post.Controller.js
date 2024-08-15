@@ -74,7 +74,8 @@ export const getPost = expressAsyncHandler(async (req, res) => {
   const post = await Post.findOne({ _id: id, owner_id: req.user.id });
 
   if (!post) {
-    return res.status(404).json({ message: 'Post not found' });
+    res.status(404);
+    throw new Error("Post not found");
   }
 
   res.status(200).json(post);
@@ -125,11 +126,13 @@ export const likePost = expressAsyncHandler(async (req, res) => {
   const post = await Post.findById(id);
 
   if (!post) {
-    return res.status(404).json({ message: 'Post not found' });
+    res.status(404);
+    throw new Error("Post not found");
   }
 
   if (post.likes.includes(req.user.id)) {
-    return res.status(400).json({ message: 'You have already liked this post' });
+    res.status(400);
+    throw new Error("You have already liked this post");
   }
 
   post.likes.push(req.user.id);
@@ -152,7 +155,8 @@ export const addComment = expressAsyncHandler(async (req, res) => {
   const post = await Post.findById(postId);
 
   if (!post) {
-    return res.status(404).json({ message: 'Post not found' });
+    res.status(404);
+    throw new Error("Post not found");
   }
 
   const newComment = {
@@ -174,16 +178,19 @@ export const likeComment = expressAsyncHandler(async (req, res) => {
   const post = await Post.findById(postId);
 
   if (!post) {
-    return res.status(404).json({ message: 'Post not found' });
+    res.status(404);
+    throw new Error("Post not found");
   }
 
   const comment = post.comments.id(commentId);
   if (!comment) {
-    return res.status(404).json({ message: 'Comment not found' });
+    res.status(404);
+    throw new Error("Comment not found");
   }
 
   if (comment.likes.includes(req.user.id)) {
-    return res.status(400).json({ message: 'You have already liked this comment' });
+    res.status(400)
+    throw new Error('You have already liked this comment');
   }
 
   comment.likes.push(req.user.id);
@@ -206,12 +213,14 @@ export const addReply = expressAsyncHandler(async (req, res) => {
   const post = await Post.findById(postId);
 
   if (!post) {
-    return res.status(404).json({ message: 'Post not found' });
+    res.status(404);
+    throw new Error("Post not found");
   }
 
   const comment = post.comments.id(commentId);
   if (!comment) {
-    return res.status(404).json({ message: 'Comment not found' });
+    res.status(404);
+    throw new Error("Comment not found");
   }
 
   const newReply = {
@@ -234,21 +243,25 @@ export const likeReply = expressAsyncHandler(async (req, res) => {
   const post = await Post.findById(postId);
 
   if (!post) {
-    return res.status(404).json({ message: 'Post not found' });
+    res.status(404);
+    throw new Error("Post not found");
   }
 
   const comment = post.comments.id(commentId);
   if (!comment) {
-    return res.status(404).json({ message: 'Comment not found' });
+    res.status(404);
+    throw new Error("Comment not found");
   }
 
   const reply = comment.replies.id(replyId);
   if (!reply) {
-    return res.status(404).json({ message: 'Reply not found' });
+    res.status(404);
+    throw new Error("Reply not found");
   }
 
   if (reply.likes.includes(req.user.id)) {
-    return res.status(400).json({ message: 'You have already liked this reply' });
+    res.status(400);
+    throw new Error("You have already liked this reply");
   }
 
   reply.likes.push(req.user.id);

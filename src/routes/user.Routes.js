@@ -1,10 +1,11 @@
 import express from 'express';
-import { registerUser, loginUser, currentUser, getUser, followUser, unFollowUser, checkFollowingStatus , getfollowers} from '../controller/userController.js';
+import { registerUser, loginUser, currentUser, getUser, followUser, unFollowUser, checkFollowingStatus , getfollowers} from '../controller/user.Controller.js';
 import validateToken from '../middleware/tokenValidationHandler.js';
+import { upload } from '../middleware/multer.js';
 
 const userRouter = express.Router();
 
-userRouter.post('/register', registerUser);
+userRouter.post('/register', upload.single('avatar'), registerUser);
 userRouter.post('/login', loginUser);
 userRouter.get('/:id' , getUser);
 userRouter.get('/:userId/getfollowers' , getfollowers);

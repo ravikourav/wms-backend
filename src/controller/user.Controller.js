@@ -2,6 +2,7 @@ import expressAsyncHandler from "express-async-handler";
 import { User } from "../models/userModel.js";
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import uploadOnCloudinary from "../utils/Cloudnary.js";
 
 //@desc Register a user
 //@route POST/api/user/register
@@ -15,7 +16,8 @@ export const registerUser = expressAsyncHandler(async (req, res) => {
     }
 
     if (role === 'admin') {
-        return res.status(403).json({ message: 'Unauthorized' });
+        res.status(403)
+        throw new Error('Unauthorized');
     }
 
     const userExists = await User.findOne({
@@ -25,6 +27,20 @@ export const registerUser = expressAsyncHandler(async (req, res) => {
     if (userExists) {
         res.status(400);
         throw new Error('User already exists');
+    }
+
+    //check for image
+    const avatarLocalPath = req.file?.path;
+    if(!avatarLocalPath){
+        res.status(400);
+        throw new Error('Please upload Profile Picture');
+    }
+
+    const avatar = await uploadOnCloudinary(avatarLocalPath);
+
+    if(!avatar){
+        res.status(400);
+        throw new Error('please uplaod avatar');
     }
 
     //Hash Password 
