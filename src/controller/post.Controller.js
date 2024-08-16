@@ -1,6 +1,7 @@
 import expressAsyncHandler from 'express-async-handler';
 import { Post } from '../models/postModel.js';
 import { User } from '../models/userModel.js';
+import uploadOnCloudinary from '../utils/Cloudnary.js';
 
 // @desc Get all posts
 // @route GET /api/post/all
@@ -8,11 +9,7 @@ import { User } from '../models/userModel.js';
 export const getAllPosts = expressAsyncHandler(async (req, res) => {
   const posts = await Post.find({}).populate({
     path: 'owner_id',
-    select: 'username followers', // Include followers in the population
-    populate: {
-      path: 'followers', // Populate the followers
-      select: 'username' // Include follower usernames or other fields you need
-    }
+    select: 'username avatar'
   });
   res.json(posts);
 });
@@ -30,12 +27,21 @@ export const getUserPosts = expressAsyncHandler(async (req, res) => {
 //@route POST/api/post/create
 //@access private
 export const createPost = expressAsyncHandler(async (req, res) => {
-  const { title, content, author, category, tags, contentColor, authorColor, tintColor, backgroundImage } = req.body;
+  const { title, content, author, category, tags, contentColor, authorColor, tintColor} = req.body;
  
-  if (!title || !content || !author || !category || !tags || !contentColor || !authorColor || !tintColor || !backgroundImage ) {
+  if (!title || !content || !author || !category || !tags || !contentColor || !authorColor || !tintColor ) {
     res.status(400);
     throw new Error("Post validation failed");
   }
+
+  const backgroundImagePath = req.file?.path;
+
+  if(!backgroundImagePath){
+    res.status(400);
+    throw new Error("image validation failed");
+  }
+
+  const backgroundImageCloudnary = await uploadOnCloudinary(backgroundImagePath);
 
   const newPost = new Post({
     owner_id: req.user.id,
@@ -47,7 +53,7 @@ export const createPost = expressAsyncHandler(async (req, res) => {
     contentColor,
     authorColor,
     tintColor,
-    backgroundImage,
+    backgroundImage: backgroundImageCloudnary.url,
     likes: [],
     comments: []
   });
@@ -68,10 +74,13 @@ export const createPost = expressAsyncHandler(async (req, res) => {
 
 //@desc Get post by ID
 //@route GET/api/post/:id
-//@access private
+//@access public
 export const getPost = expressAsyncHandler(async (req, res) => {
   const { id } = req.params;
-  const post = await Post.findOne({ _id: id, owner_id: req.user.id });
+  const post = await Post.findOne({ _id: id}).populate({
+    path: 'owner_id',
+    select: 'username followers avatar',
+  });
 
   if (!post) {
     res.status(404);

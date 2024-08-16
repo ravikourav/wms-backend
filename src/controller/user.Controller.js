@@ -29,18 +29,12 @@ export const registerUser = expressAsyncHandler(async (req, res) => {
         throw new Error('User already exists');
     }
 
-    //check for image
+    //handle profile image
+    let avatarUrl = '';
     const avatarLocalPath = req.file?.path;
-    if(!avatarLocalPath){
-        res.status(400);
-        throw new Error('Please upload Profile Picture');
-    }
-
-    const avatar = await uploadOnCloudinary(avatarLocalPath);
-
-    if(!avatar){
-        res.status(400);
-        throw new Error('please uplaod avatar');
+    if(avatarLocalPath){
+        const avatar = await uploadOnCloudinary(avatarLocalPath);
+        avatarUrl = avatar.url;
     }
 
     //Hash Password 
@@ -53,6 +47,7 @@ export const registerUser = expressAsyncHandler(async (req, res) => {
         username,
         email,
         password: hashedPassword,
+        avatar: avatarUrl,
         followers: [],
         following: [],
         posts: [],
