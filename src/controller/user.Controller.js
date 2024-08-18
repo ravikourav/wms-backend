@@ -181,11 +181,11 @@ export const followUser = expressAsyncHandler(async (req , res) => {
     await currentUser.save();
     await userToFollow.save();
 
-    res.status(200).json({ message: "User followed successfully" });
+    res.status(200).json({ message: "User followed successfully" , followers: userToFollow.followers });
 });
 
 //@desc Unfollow User
-//@route DELETE/api/user/:id/Unfollow
+//@route POST/api/user/:id/unfollow
 //@access private
 export const unFollowUser = expressAsyncHandler(async (req , res) => {
     const userIdToUnfollow = req.params.userId;
@@ -213,9 +213,9 @@ export const unFollowUser = expressAsyncHandler(async (req , res) => {
     userToUnfollow.followers = userToUnfollow.followers.filter(id => id.toString() !== currentUserId);
 
     await currentUser.save();
-    await userIdToUnfollow.save();
+    await userToUnfollow.save();
 
-    res.status(200).json({ message: "User unfollowed successfully" });
+    res.status(200).json({ message: "User unfollowed successfully" , followers: userToUnfollow.followers  });
 });
 
 //@desc isfollow User

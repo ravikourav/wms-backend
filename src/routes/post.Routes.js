@@ -1,5 +1,5 @@
 import express from 'express';
-import { getAllPosts, getUserPosts, createPost, getPost, updatePost, deletePost, likePost, addComment, likeComment, addReply, likeReply } from '../controller/post.Controller.js';
+import { getAllPosts, getUserPosts, createPost, getPost, updatePost, deletePost, likePost, unlikePost, addComment, likeComment, addReply, likeReply} from '../controller/post.Controller.js';
 import validateToken from '../middleware/tokenValidationHandler.js';
 import { upload } from '../middleware/multer.js';
 
@@ -18,14 +18,14 @@ router.get('/:id', getPost);
 router.use(validateToken(['user', 'admin']));
 
 // Protected routes
-
 router.post('/create', upload.single('backgroundImage'), createPost);
 router.put('/:id', updatePost);
 router.delete('/:id', deletePost);
-router.put('/:postId/like', likePost);
+router.post('/:postId/like', likePost);
+router.post('/:postId/unlike', unlikePost);
 router.post('/:postId/comments', addComment);
-router.put('/:postId/comments/:commentId/like', likeComment);
+router.post('/:postId/comments/:commentId/like', likeComment);
 router.post('/:postId/comments/:commentId/replies', addReply);
-router.put('/:postId/comments/:commentId/replies/:replyId/like', likeReply);
+router.post('/:postId/comments/:commentId/replies/:replyId/like', likeReply);
 
 export default router;

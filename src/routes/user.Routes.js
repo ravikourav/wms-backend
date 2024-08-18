@@ -14,7 +14,7 @@ userRouter.use(validateToken(['user' , 'admin']));
 
 userRouter.get('/current', currentUser);
 userRouter.post('/:userId/follow', followUser);
-userRouter.delete('/:userId/unfollow' , unFollowUser);
+userRouter.post('/:userId/unfollow' , unFollowUser);
 userRouter.get('/:userId/isfollowing' , checkFollowingStatus)
 
 export default userRouter;

@@ -2,6 +2,7 @@ import expressAsyncHandler from 'express-async-handler';
 import { Post } from '../models/postModel.js';
 import { User } from '../models/userModel.js';
 import uploadOnCloudinary from '../utils/Cloudnary.js';
+import { currentUser } from './user.Controller.js';
 
 // @desc Get all posts
 // @route GET /api/post/all
@@ -128,25 +129,50 @@ export const deletePost = expressAsyncHandler(async (req, res) => {
 });
 
 // @desc Like a post
-// @route PUT /api/post/:id/like
+// @route PUT /api/post/:postId/like
 // @access Private
 export const likePost = expressAsyncHandler(async (req, res) => {
-  const { id } = req.params;
-  const post = await Post.findById(id);
+  const { postId } = req.params;
+  const userId = req.user.id;
+
+  const post = await Post.findById(postId);
 
   if (!post) {
     res.status(404);
     throw new Error("Post not found");
   }
 
-  if (post.likes.includes(req.user.id)) {
+  if (post.likes.includes(userId)) {
     res.status(400);
     throw new Error("You have already liked this post");
   }
 
   post.likes.push(req.user.id);
   await post.save();
-  res.status(200).json(post);
+  res.status(200).json({likes : post.likes});
+});
+
+// @desc Like a post
+// @route DELETE/api/post/:postId/unlike
+// @access Private
+export const unlikePost = expressAsyncHandler(async (req, res) => {
+  const { postId } = req.params;
+  const userId = req.user.id;
+  const post = await Post.findById(postId);
+
+  if (!post) {
+    res.status(404);
+    throw new Error("Post not found");
+  }
+
+  if (!post.likes.includes(userId)) {
+    res.status(400);
+    throw new Error("You have not liked this post");
+  }
+
+  post.likes = post.likes.filter(id=>id.toString() !== userId);
+  await post.save();
+  res.status(200).json({likes : post.likes});
 });
 
 // @desc Add a comment to a post

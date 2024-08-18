@@ -11,11 +11,34 @@ const uploadOnCloudinary = async(tempFilePath) =>{
     
     try{
         const uploadResult = await cloudinary.uploader.upload(tempFilePath);
-        fs.unlink(tempFilePath);
+        if (fs.existsSync(tempFilePath)) {
+            fs.unlink(tempFilePath, (err) => {
+                if (err) {
+                  console.error('Error while deleting the file:', err);
+                } else {
+                  console.log('File deleted successfully');
+                }
+            });
+        } else {
+            console.log('File not found, nothing to delete');
+        }
+
         return uploadResult;
     } catch (error){
         console.log(error);
-        fs.unlink(tempFilePath);
+        if (fs.existsSync(tempFilePath)) {
+            fs.unlink(tempFilePath, (err) => {
+                if (err) {
+                  console.error('Error while deleting the file:', err);
+                } else {
+                  console.log('File deleted successfully');
+                }
+            });
+        } else {
+            console.log('File not found, nothing to delete');
+        }
+
+        throw error;
     }
 }
 
