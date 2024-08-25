@@ -1,24 +1,21 @@
 import expressAsyncHandler from 'express-async-handler';
-import Tag from '../models/tagModel.js';
+import { Tag } from '../models/tagModel.js';
 
 // @desc Get all tags
 // @route GET /api/tag/all
 // @access Public
 export const getTags = expressAsyncHandler(async (req, res) => {
-    const tags = await Tag.find().populate('posts');
+    const tags = await Tag.find();
     res.status(200).json(tags);
 });
 
-// @desc Get tag by id
-// @route GET /api/tag/:id
+// @desc Get all tags
+// @route GET /api/tag/name
 // @access Public
-export const getTagById = expressAsyncHandler(async (req, res) => {
-    const tag = await Tag.findById(req.params.id).populate('posts');
-    if (!tag) {
-        res.status(404);
-        throw new Error('Tag not found');
-    }
-    res.status(200).json(tag);
+export const getTagsName = expressAsyncHandler(async (req, res) => {
+    const tags = await Tag.find({}, 'tag');
+    const tagNames = tags.map(tag => tag.tag);
+    res.status(200).json({ names: tagNames });
 });
 
 // @desc Get All posts By tag
@@ -41,7 +38,12 @@ export const getPostsByTag = expressAsyncHandler(async (req, res) => {
 // @access Private Admin
 export const createTag = expressAsyncHandler(async (req, res) => {
     const { tag, tagLine, imageURL } = req.body;
-    const newTag = new Tag({ tag, tagLine, imageURL });
+    const existingTag = await Tag.findOne({ tag });
+    if (existingTag) {
+        res.status(400);
+        throw new Error('Tag already exists');
+    }
+    const newTag = new Tag({ tag, tagLine, imageURL , posts : []});
     await newTag.save();
     res.status(201).json(newTag);
 });

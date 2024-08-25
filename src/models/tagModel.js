@@ -4,6 +4,7 @@ const tagSchema = new mongoose.Schema({
     tag: {
         type: String,
         required: true,
+        unique: true
     },
     tagLine: {
         type: String,
@@ -19,6 +20,4 @@ const tagSchema = new mongoose.Schema({
     }]
 }, { timestamps: true });
 
-const Tag = mongoose.model('Tag', tagSchema);
-
-export default Tag;
+export const Tag = mongoose.model('Tag', tagSchema);

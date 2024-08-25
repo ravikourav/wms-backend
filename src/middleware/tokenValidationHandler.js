@@ -1,8 +1,8 @@
 import expressAsyncHandler from "express-async-handler";
-import jwt from 'jsonwebtoken';
+import jwt, { decode } from 'jsonwebtoken';
 
 const validateToken = (role) => expressAsyncHandler(async (req, res, next) => {
-  const token = req.cookies.authToken;
+  const token = req.cookies.authToken || req.headers.authorization?.split(' ')[1];
   
   if (token) {
     try {

@@ -121,8 +121,8 @@ export const currentUser = expressAsyncHandler(async (req, res) => {
 //@route GET/api/user/:id
 //@access public 
 export const getUser = expressAsyncHandler(async(req, res)=>{
-    const { id } = req.params;
-    const user = await User.findById(id)
+    const { username } = req.params;
+    const user = await User.findOne({username})
         .populate('posts') // Populate posts
         .populate('saved'); // Populate saved posts
     if (!user) {

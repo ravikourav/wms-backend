@@ -77,6 +77,12 @@ const postSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    width : {
+        type : Number,
+    },
+    height : {
+        type : Number,
+    },
     likes: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',

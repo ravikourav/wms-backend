@@ -7,7 +7,7 @@ const userRouter = express.Router();
 
 userRouter.post('/register', upload.single('avatar'), registerUser);
 userRouter.post('/login', loginUser);
-userRouter.get('/:id' , getUser);
+userRouter.get('/:username' , getUser);
 userRouter.get('/:userId/getfollowers' , getfollowers);
 
 userRouter.use(validateToken(['user' , 'admin']));

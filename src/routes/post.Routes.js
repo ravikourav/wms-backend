@@ -1,5 +1,5 @@
 import express from 'express';
-import { getAllPosts, getUserPosts, createPost, getPost, updatePost, deletePost, likePost, unlikePost, addComment, likeComment, addReply, likeReply} from '../controller/post.Controller.js';
+import { getAllPosts, getUserPosts, createPost, getPost, updatePost, deletePost, likePost, unlikePost, addComment, likeComment, addReply, likeReply, unlikeComment, unlikeReply} from '../controller/post.Controller.js';
 import validateToken from '../middleware/tokenValidationHandler.js';
 import { upload } from '../middleware/multer.js';
 
@@ -23,9 +23,11 @@ router.put('/:id', updatePost);
 router.delete('/:id', deletePost);
 router.post('/:postId/like', likePost);
 router.post('/:postId/unlike', unlikePost);
-router.post('/:postId/comments', addComment);
-router.post('/:postId/comments/:commentId/like', likeComment);
-router.post('/:postId/comments/:commentId/replies', addReply);
-router.post('/:postId/comments/:commentId/replies/:replyId/like', likeReply);
+router.post('/:postId/comment', addComment);
+router.post('/:postId/comment/:commentId/reply', addReply);
+router.post('/:postId/comment/:commentId/like', likeComment);
+router.post('/:postId/comment/:commentId/unlike' , unlikeComment)
+router.post('/:postId/comment/:commentId/reply/:replyId/like', likeReply);
+router.post('/:postId/comment/:commentId/reply/:replyId/unlike', unlikeReply);
 
 export default router;

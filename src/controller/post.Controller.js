@@ -1,8 +1,8 @@
 import expressAsyncHandler from 'express-async-handler';
 import { Post } from '../models/postModel.js';
 import { User } from '../models/userModel.js';
+import { Tag }  from '../models/tagModel.js';
 import uploadOnCloudinary from '../utils/Cloudnary.js';
-import { currentUser } from './user.Controller.js';
 
 // @desc Get all posts
 // @route GET /api/post/all
@@ -42,29 +42,42 @@ export const createPost = expressAsyncHandler(async (req, res) => {
     throw new Error("image validation failed");
   }
 
-  const backgroundImageCloudnary = await uploadOnCloudinary(backgroundImagePath);
+  const tagsArray = tags.split(',').map(tag => tag.trim());
 
+  const backgroundImageCloudnary = await uploadOnCloudinary(backgroundImagePath);
   const newPost = new Post({
     owner_id: req.user.id,
     title,
     content,
     author,
     category,
-    tags,
+    tags: tagsArray,
     contentColor,
     authorColor,
     tintColor,
     backgroundImage: backgroundImageCloudnary.url,
+    width:backgroundImageCloudnary.width,
+    height: backgroundImageCloudnary.height,
     likes: [],
     comments: []
   });
-
   const savedPost = await newPost.save();
 
   const user = await User.findById(req.user.id);
   if (!user) {
     res.status(404);
     throw new Error("User not found");
+  }
+  
+  for (let tagName of tagsArray) {
+    let tag = await Tag.findOne({ tag: tagName });
+
+    if (!tag) {
+      throw new Error('tag not found' , tagName)
+    } else {
+      tag.posts.push(savedPost._id);
+    }
+    await tag.save();
   }
 
   user.posts.push(savedPost.id);
@@ -153,7 +166,7 @@ export const likePost = expressAsyncHandler(async (req, res) => {
 });
 
 // @desc Like a post
-// @route DELETE/api/post/:postId/unlike
+// @route POST/api/post/:postId/unlike
 // @access Private
 export const unlikePost = expressAsyncHandler(async (req, res) => {
   const { postId } = req.params;
@@ -176,7 +189,7 @@ export const unlikePost = expressAsyncHandler(async (req, res) => {
 });
 
 // @desc Add a comment to a post
-// @route POST /api/post/:postId/comments
+// @route POST /api/post/:postId/comment
 // @access Private
 export const addComment = expressAsyncHandler(async (req, res) => {
   const { postId } = req.params;
@@ -195,18 +208,57 @@ export const addComment = expressAsyncHandler(async (req, res) => {
   }
 
   const newComment = {
-    username: req.user.username, // Assuming req.user contains user info
+    username: req.user.username,
     comment,
     likes: [],
     date: new Date()
   };
+
   post.comments.push(newComment);
+  await post.save();
+  res.status(201).json({comment: post.comments});
+});
+
+
+// @desc Add a reply to a comment
+// @route POST /api/post/:postId/comment/:commentId/reply
+// @access Private
+export const addReply = expressAsyncHandler(async (req, res) => {
+  const { postId, commentId } = req.params;
+  const { comment } = req.body;
+
+  if (!comment) {
+    res.status(400);
+    throw new Error('Reply text is required');
+  }
+
+  const post = await Post.findById(postId);
+
+  if (!post) {
+    res.status(404);
+    throw new Error("Post not found");
+  }
+
+  const replyTo = post.comments.id(commentId);
+  if (!replyTo) {
+    res.status(404);
+    throw new Error("Comment not found");
+  }
+
+  const newReply = {
+    username: req.user.username,
+    reply: comment,
+    likes: [],
+    date: new Date()
+  };
+
+  replyTo.replies.push(newReply);
   await post.save();
   res.status(201).json(post);
 });
 
 // @desc Like a comment
-// @route PUT /api/post/:postId/comments/:commentId/like
+// @route PUT /api/post/:postId/comment/:commentId/like
 // @access Private
 export const likeComment = expressAsyncHandler(async (req, res) => {
   const { postId, commentId } = req.params;
@@ -230,22 +282,16 @@ export const likeComment = expressAsyncHandler(async (req, res) => {
 
   comment.likes.push(req.user.id);
   await post.save();
-  res.status(200).json(comment);
+  res.status(200).json({likes : comment.likes});
 });
 
-// @desc Add a reply to a comment
-// @route POST /api/post/:postId/comments/:commentId/replies
+// @desc Like a post
+// @route PUT /api/post/:postId/comment/:commentId/unlike
 // @access Private
-export const addReply = expressAsyncHandler(async (req, res) => {
+export const unlikeComment = expressAsyncHandler(async (req, res) => {
   const { postId, commentId } = req.params;
-  const { reply } = req.body;
-
-  if (!reply) {
-    res.status(400);
-    throw new Error('Reply text is required');
-  }
-
   const post = await Post.findById(postId);
+  const userId = req.user.id;
 
   if (!post) {
     res.status(404);
@@ -258,20 +304,18 @@ export const addReply = expressAsyncHandler(async (req, res) => {
     throw new Error("Comment not found");
   }
 
-  const newReply = {
-    username: req.user.username, // Assuming req.user contains user info
-    reply,
-    likes: [],
-    date: new Date()
-  };
+  if (!comment.likes.includes(userId)) {
+    res.status(400)
+    throw new Error('You have not liked this comment');
+  }
 
-  comment.replies.push(newReply);
+  comment.likes = comment.likes.filter(id=>id.toString() !== userId);
   await post.save();
-  res.status(201).json(post);
+  res.status(200).json({likes : comment.likes});
 });
 
 // @desc Like a reply
-// @route PUT /api/post/:postId/comments/:commentId/replies/:replyId/like
+// @route PUT /api/post/:postId/comment/:commentId/reply/:replyId/like
 // @access Private
 export const likeReply = expressAsyncHandler(async (req, res) => {
   const { postId, commentId, replyId } = req.params;
@@ -301,5 +345,40 @@ export const likeReply = expressAsyncHandler(async (req, res) => {
 
   reply.likes.push(req.user.id);
   await post.save();
-  res.status(200).json(reply);
+  res.status(200).json({likes :reply.likes});
+});
+
+// @desc Unlike a reply
+// @route PUT /api/post/:postId/comment/:commentId/reply/:replyId/unlike
+// @access Private
+export const unlikeReply = expressAsyncHandler(async (req, res) => {
+  const { postId, commentId, replyId } = req.params;
+  const post = await Post.findById(postId);
+
+  if (!post) {
+    res.status(404);
+    throw new Error("Post not found");
+  }
+
+  const comment = post.comments.id(commentId);
+  if (!comment) {
+    res.status(404);
+    throw new Error("Comment not found");
+  }
+
+  const reply = comment.replies.id(replyId);
+  if (!reply) {
+    res.status(404);
+    throw new Error("Reply not found");
+  }
+
+  const userIndex = reply.likes.indexOf(req.user.id);
+  if (userIndex === -1) {
+    res.status(400);
+    throw new Error("You have not liked this reply");
+  }
+
+  reply.likes.splice(userIndex, 1);
+  await post.save();
+  res.status(200).json({likes :reply.likes});
 });
