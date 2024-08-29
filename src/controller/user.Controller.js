@@ -29,12 +29,20 @@ export const registerUser = expressAsyncHandler(async (req, res) => {
         throw new Error('User already exists');
     }
 
-    //handle profile image
     let avatarUrl = '';
-    const avatarLocalPath = req.file?.path;
-    if(avatarLocalPath){
+    let coverImgUrl = '';
+
+    const avatarLocalPath = req.files?.avatar?.[0]?.path;
+    const coverImgLocalPath = req.files?.coverImg?.[0]?.path;
+
+    if (avatarLocalPath) {
         const avatar = await uploadOnCloudinary(avatarLocalPath);
         avatarUrl = avatar.url;
+    }
+
+    if (coverImgLocalPath) {
+        const coverImg = await uploadOnCloudinary(coverImgLocalPath);
+        coverImgUrl = coverImg.url;
     }
 
     //Hash Password 
@@ -48,6 +56,8 @@ export const registerUser = expressAsyncHandler(async (req, res) => {
         email,
         password: hashedPassword,
         avatar: avatarUrl,
+        coverImg: coverImgUrl,
+        bio: '',
         followers: [],
         following: [],
         posts: [],
@@ -229,4 +239,48 @@ export const checkFollowingStatus = expressAsyncHandler(async(req,res)=>{
     const isfollowing = user.following.includes(userToCheck);
 
     res.status(200).json({isfollowing});
+});
+
+//@desc update User
+//@route PUT/api/user/:username/update
+//@access private  
+export const updateUser = expressAsyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const {name, bio } = req.body;
+
+    const user = await User.findById(id);
+    if (!user) {
+        res.status(404);
+        throw new Error('User not found');
+    }
+
+    let avatarUrl = '';
+    let coverImgUrl = '';
+
+    const avatarLocalPath = req.files?.avatar?.[0]?.path;
+    const coverImgLocalPath = req.files?.coverImg?.[0]?.path;
+
+    if (avatarLocalPath) {
+        const avatar = await uploadOnCloudinary(avatarLocalPath);
+        avatarUrl = avatar.url;
+    }
+
+    if (coverImgLocalPath) {
+        const coverImg = await uploadOnCloudinary(coverImgLocalPath);
+        coverImgUrl = coverImg.url;
+    }
+
+    if (req.body.name && req.body.name !== user.name) {
+        user.name = req.body.name;
+    }
+    
+    if (req.body.bio && req.body.bio !== user.bio) {
+        user.bio = req.body.bio;
+    }
+    if (avatarUrl) user.avatar = avatarUrl;
+    if (coverImgUrl) user.coverImg = coverImgUrl;
+    
+    await user.save();
+    user.password = undefined;
+    res.status(200).json({ message: 'User updated successfully', user });
 });

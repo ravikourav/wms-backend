@@ -23,6 +23,13 @@ const userSchema = new mongoose.Schema({
     avatar:{
         type: String
     },
+    coverImg:{
+        type: String
+    },
+    bio: {
+        type: String,
+        maxlength: 160
+    },
     followers: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'
