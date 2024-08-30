@@ -246,7 +246,7 @@ export const checkFollowingStatus = expressAsyncHandler(async(req,res)=>{
 //@access private  
 export const updateUser = expressAsyncHandler(async (req, res) => {
     const { id } = req.params;
-    const {name, bio } = req.body;
+    const {name, bio, removeAvatar, removeCoverImg} = req.body;
 
     const user = await User.findById(id);
     if (!user) {
@@ -257,28 +257,28 @@ export const updateUser = expressAsyncHandler(async (req, res) => {
     let avatarUrl = '';
     let coverImgUrl = '';
 
-    const avatarLocalPath = req.files?.avatar?.[0]?.path;
-    const coverImgLocalPath = req.files?.coverImg?.[0]?.path;
-
-    if (avatarLocalPath) {
-        const avatar = await uploadOnCloudinary(avatarLocalPath);
+    if (req.files?.avatar?.[0]?.path) {
+        const avatar = await uploadOnCloudinary(req.files.avatar[0].path);
         avatarUrl = avatar.url;
     }
 
-    if (coverImgLocalPath) {
-        const coverImg = await uploadOnCloudinary(coverImgLocalPath);
+     if (req.files?.coverImg?.[0]?.path) {
+        const coverImg = await uploadOnCloudinary(req.files.coverImg[0].path);
         coverImgUrl = coverImg.url;
     }
 
-    if (req.body.name && req.body.name !== user.name) {
+    if (name && name !== user.name) {
         user.name = req.body.name;
     }
     
-    if (req.body.bio && req.body.bio !== user.bio) {
+    if (bio && bio !== user.bio) {
         user.bio = req.body.bio;
     }
-    if (avatarUrl) user.avatar = avatarUrl;
-    if (coverImgUrl) user.coverImg = coverImgUrl;
+
+    if(removeAvatar || avatarUrl)
+        user.avatar = avatarUrl;
+    if(removeCoverImg || coverImgUrl)
+        user.coverImg = coverImgUrl;
     
     await user.save();
     user.password = undefined;

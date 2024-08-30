@@ -1,12 +1,12 @@
 import express from 'express';
 import dotenv from 'dotenv';
-import errorHandler from './src/middleware/errorHandler.js';
-import connectDB from './src/db/db.js';
+import errorHandler from '../src/middleware/errorHandler.js';
+import connectDB from '../src/db/db.js';
 import cookieParser from 'cookie-parser';
 
-import postRoutes from './src/routes/post.Routes.js';
-import userRoutes from './src/routes/user.Routes.js';
-import tagRoutes from './src/routes/tag.Routes.js';
+import postRoutes from '../src/routes/post.Routes.js';
+import userRoutes from '../src/routes/user.Routes.js';
+import tagRoutes from '../src/routes/tag.Routes.js';
 
 dotenv.config();
 
