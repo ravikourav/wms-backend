@@ -1,5 +1,6 @@
 import express from 'express';
 import dotenv from 'dotenv';
+import cors from 'cors';
 import errorHandler from '../src/middleware/errorHandler.js';
 import connectDB from '../src/db/db.js';
 import cookieParser from 'cookie-parser';
@@ -15,6 +16,25 @@ const port = process.env.PORT || 3000;
 
 // Connect to database
 connectDB();
+
+// CORS configuration
+// List of allowed origins
+const allowedOrigins = [
+  'http://localhost:3000', // Local development
+  'https://your-vercel-app.vercel.app', // Vercel production
+];
+
+app.use(cors({
+  origin: (origin, callback) => {
+    if (allowedOrigins.includes(origin) || !origin) {
+      callback(null, true); // Allow request
+    } else {
+      callback(new Error('Not allowed by CORS')); // Block request
+    }
+  },
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type']
+}));
 
 // Middleware
 app.use(express.json());
