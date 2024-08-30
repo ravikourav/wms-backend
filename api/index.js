@@ -18,20 +18,8 @@ const port = process.env.PORT || 3000;
 connectDB();
 
 // CORS configuration
-// List of allowed origins
-const allowedOrigins = [
-  'http://localhost:3000', // Local development
-  'https://your-vercel-app.vercel.app', // Vercel production
-];
-
 app.use(cors({
-  origin: (origin, callback) => {
-    if (allowedOrigins.includes(origin) || !origin) {
-      callback(null, true); // Allow request
-    } else {
-      callback(new Error('Not allowed by CORS')); // Block request
-    }
-  },
+  origin: ['http://localhost:3000', 'https://your-vercel-app.vercel.app'], // Allow local and Vercel URLs
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type']
 }));
