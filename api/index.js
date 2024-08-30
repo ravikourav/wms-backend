@@ -19,7 +19,12 @@ connectDB();
 
 // CORS configuration
 app.use(cors({
-  origin: ['http://localhost:3000', 'https://wisemansaid-git-master-ravi-kouravs-projects.vercel.app' , 'https://wisemansaid-qhjhqbmtq-ravi-kouravs-projects.vercel.app'], // Allow local and Vercel URLs
+  origin: [
+    'http://localhost:3000', // Local development
+    'https://wisemansaid.vercel.app', // Production
+    'https://wisemansaid-git-master-ravi-kouravs-projects.vercel.app', // Another Vercel deployment
+    'https://wisemansaid-qhjhqbmtq-ravi-kouravs-projects.vercel.app' // Another Vercel deployment
+  ],
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type']
 }));
