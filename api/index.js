@@ -26,7 +26,8 @@ app.use(cors({
     'https://wisemansaid-qhjhqbmtq-ravi-kouravs-projects.vercel.app' // Another Vercel deployment
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type']
+  allowedHeaders: ['Content-Type'],
+  credentials: true
 }));
 
 // Middleware
