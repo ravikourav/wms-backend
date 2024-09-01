@@ -284,3 +284,21 @@ export const updateUser = expressAsyncHandler(async (req, res) => {
     user.password = undefined;
     res.status(200).json({ message: 'User updated successfully', user });
 });
+
+//@desc Get Profile Picture URL
+//@route GET/api/user/:username/getProfilePicture
+//@access public
+export const getProfilePicture = expressAsyncHandler(async (req, res) => {
+    const { username } = req.params;
+    
+    // Find the user by username
+    const user = await User.findOne({ username });
+    
+    if (!user) {
+        res.status(404);
+        throw new Error('User not found');
+    }
+    
+    // Respond with the profile picture URL
+    res.status(200).json({ profilePicture: user.avatar });
+});

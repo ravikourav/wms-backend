@@ -94,6 +94,7 @@ export const getPost = expressAsyncHandler(async (req, res) => {
   const post = await Post.findOne({ _id: id}).populate({
     path: 'owner_id',
     select: 'username followers avatar',
+    
   });
 
   if (!post) {

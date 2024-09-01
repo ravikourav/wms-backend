@@ -1,5 +1,5 @@
 import express from 'express';
-import { registerUser, loginUser, currentUser, getUser, followUser, unFollowUser, checkFollowingStatus , getfollowers , updateUser} from '../controller/user.Controller.js';
+import { registerUser, loginUser, currentUser, getUser, followUser, unFollowUser, checkFollowingStatus , getfollowers , updateUser, getProfilePicture} from '../controller/user.Controller.js';
 import validateToken from '../middleware/tokenValidationHandler.js';
 import { upload } from '../middleware/multer.js';
 
@@ -12,7 +12,7 @@ userRouter.post('/register', upload.fields([
 userRouter.post('/login', loginUser);
 userRouter.get('/:username' , getUser);
 userRouter.get('/:userId/getfollowers' , getfollowers);
-
+userRouter.get('/:username/getProfilePicture', getProfilePicture);
 userRouter.use(validateToken(['user' , 'admin']));
 
 userRouter.put('/:id/update', upload.fields([
