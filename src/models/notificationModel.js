@@ -1,6 +1,6 @@
- import mongoose from 'mongoose';
+import mongoose from 'mongoose';
 
-const notificationSchema = new mongoose.Schema({
+export const notificationSchema = new mongoose.Schema({
     type: {
         type: String,
         enum: ['follow', 'comment', 'like', 'mention'],
@@ -18,6 +18,6 @@ const notificationSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     }
-}, { timestamps : true });
+}, { timestamps: true });
 
 export const Notification = mongoose.model('Notification', notificationSchema);

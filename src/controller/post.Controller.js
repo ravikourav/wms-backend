@@ -160,9 +160,23 @@ export const likePost = expressAsyncHandler(async (req, res) => {
     res.status(400);
     throw new Error("You have already liked this post");
   }
-
+  
   post.likes.push(req.user.id);
+
+  //handle notification
+  const postOwner = await User.findById(post.owner_id);
+  if(userId !== post.owner_id){
+    const notification ={
+      type: 'like',
+      title: 'New Like',
+      message: `${req.user.username} liked your post.`,
+      read: false
+    }
+    postOwner.notifications.push(notification);
+  }
+
   await post.save();
+  await postOwner.save();
   res.status(200).json({likes : post.likes});
 });
 
@@ -196,7 +210,7 @@ export const addComment = expressAsyncHandler(async (req, res) => {
   const { postId } = req.params;
   const { comment } = req.body;
 
-  if (!comment) {
+  if (!comment || comment.length < 1) {
     res.status(400);
     throw new Error('Comment text is required');
   }
@@ -216,7 +230,21 @@ export const addComment = expressAsyncHandler(async (req, res) => {
   };
 
   post.comments.push(newComment);
+  
+  //handle notification
+  const postOwner = await User.findById(post.owner_id);
+  if(req.user.id !== post.owner_id){
+    const notification = {
+      type: 'comment',
+      title: 'New Comment',
+      message: `${req.user.username} commented on your post.`,
+      read: false,
+    }
+    postOwner.notifications.push(notification);
+  }
+
   await post.save();
+  await postOwner.save();
   res.status(201).json({comment: post.comments});
 });
 
@@ -252,9 +280,23 @@ export const addReply = expressAsyncHandler(async (req, res) => {
     likes: [],
     date: new Date()
   };
-
+  
   replyTo.replies.push(newReply);
+
+  // Create notification for the comment author
+  const commentAuthor = await User.findOne({ 'comments._id': commentId });
+  if (commentAuthor !== req.user.id) {
+    const notification = new Notification({
+      type: 'reply',
+      title: 'New Reply',
+      message: `${req.user.username} replied to your comment.`,
+      read: false
+    });
+    commentAuthor.notifications.push(notification);
+  }
+
   await post.save();
+  await commentAuthor.save();
   res.status(201).json(post);
 });
 

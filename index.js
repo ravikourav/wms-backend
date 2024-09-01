@@ -1,13 +1,14 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
-import errorHandler from '../src/middleware/errorHandler.js';
-import connectDB from '../src/db/db.js';
+import errorHandler from './src/middleware/errorHandler.js';
+import connectDB from './src/db/db.js';
 import cookieParser from 'cookie-parser';
 
-import postRoutes from '../src/routes/post.Routes.js';
-import userRoutes from '../src/routes/user.Routes.js';
-import tagRoutes from '../src/routes/tag.Routes.js';
+import postRoutes from './src/routes/post.Routes.js';
+import userRoutes from './src/routes/user.Routes.js';
+import tagRoutes from './src/routes/tag.Routes.js';
+import notificationRoutes from './src/routes/notification.Routes.js';
 
 dotenv.config();
 
@@ -20,13 +21,12 @@ connectDB();
 // CORS configuration
 app.use(cors({
   origin: [
-    'http://localhost:3000', // Local development
-    'https://wisemansaid.vercel.app', // Production
-    'https://wisemansaid-git-master-ravi-kouravs-projects.vercel.app', // Another Vercel deployment
-    'https://wisemansaid-qhjhqbmtq-ravi-kouravs-projects.vercel.app' // Another Vercel deployment
+    'http://localhost:3000', 
+    'https://wisemansaid.vercel.app',
+    'https://wisemansaid-git-master-ravi-kouravs-projects.vercel.app', 
+    'https://wisemansaid-qhjhqbmtq-ravi-kouravs-projects.vercel.app' 
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type'],
   credentials: true
 }));
 
@@ -38,6 +38,7 @@ app.use(cookieParser());
 app.use('/api/user', userRoutes);
 app.use('/api/post', postRoutes);
 app.use('/api/tag' , tagRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Error handling middleware
 app.use(errorHandler);

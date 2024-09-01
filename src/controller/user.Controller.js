@@ -1,5 +1,6 @@
 import expressAsyncHandler from "express-async-handler";
 import { User } from "../models/userModel.js";
+import { Notification } from '../models/notificationModel.js';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import uploadOnCloudinary from "../utils/Cloudnary.js";
@@ -124,6 +125,7 @@ export const currentUser = expressAsyncHandler(async (req, res) => {
         throw new Error('User not found');
     }
     user.password = undefined;
+    user.notifications = undefined;
     res.status(200).json(user);
 });
 
@@ -140,6 +142,7 @@ export const getUser = expressAsyncHandler(async(req, res)=>{
         throw new Error('User not found');
     }
     user.password = undefined;
+    user.notifications = undefined;
     res.status(200).json(user);
 });
 
@@ -156,10 +159,10 @@ export const getfollowers = expressAsyncHandler(async(req, res)=>{
     res.status(200).json(user.followers);
 });
 
-//@desc Follow User
-//@route POST/api/user/:id/follow
-//@access private
-export const followUser = expressAsyncHandler(async (req , res) => {
+// @desc Follow User
+// @route POST /api/user/:userId/follow
+// @access Private
+export const followUser = expressAsyncHandler(async (req, res) => {
     const userIdToFollow = req.params.userId;
     const currentUserId = req.user.id;
 
@@ -180,18 +183,30 @@ export const followUser = expressAsyncHandler(async (req , res) => {
         throw new Error("You are already following this user");
     }
 
-    if (currentUserId === userIdToFollow){
+    if (currentUserId === userIdToFollow) {
         res.status(400);
         throw new Error("You cannot follow yourself");
     }
 
+    // Update following and followers lists
     currentUser.following.push(userIdToFollow);
     userToFollow.followers.push(currentUserId);
 
+    // Create a notification for the user being followed
+    const newNotification = {
+        type: 'follow',
+        title: 'New Follower',
+        message: `${currentUser.username} has started following you.`,
+        read: false,
+    };
+
+    userToFollow.notifications.push(newNotification); // Add the notification directly to the user model
+
+    // Save the changes
     await currentUser.save();
     await userToFollow.save();
 
-    res.status(200).json({ message: "User followed successfully" , followers: userToFollow.followers });
+    res.status(200).json({ message: "User followed successfully", followers: userToFollow.followers });
 });
 
 //@desc Unfollow User
@@ -218,9 +233,14 @@ export const unFollowUser = expressAsyncHandler(async (req , res) => {
         throw new Error("You are not following this user");
     }
 
-    // Remove from following and followers lists
-    currentUser.following = currentUser.following.filter(id => id.toString() !== userIdToUnfollow);
-    userToUnfollow.followers = userToUnfollow.followers.filter(id => id.toString() !== currentUserId);
+    // Remove the follow relationship using pull
+    currentUser.following.pull(userIdToUnfollow);
+    userToUnfollow.followers.pull(currentUserId);
+
+     // Remove the notification related to the unfollow action
+     userToUnfollow.notifications = userToUnfollow.notifications.filter(
+        (notification) => !(notification.type === 'follow' && notification.message.includes(currentUser.username + ' has started following you.'))
+    );
 
     await currentUser.save();
     await userToUnfollow.save();
@@ -282,6 +302,7 @@ export const updateUser = expressAsyncHandler(async (req, res) => {
     
     await user.save();
     user.password = undefined;
+    user.notifications = undefined;
     res.status(200).json({ message: 'User updated successfully', user });
 });
 

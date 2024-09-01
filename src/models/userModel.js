@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { notificationSchema } from "./notificationModel.js";
 
 const userSchema = new mongoose.Schema({
     name: {
@@ -46,6 +47,7 @@ const userSchema = new mongoose.Schema({
         type : mongoose.Schema.Types.ObjectId,
         ref : 'Post'
     }],
+    notifications: [notificationSchema],
     role : {
         type: String,
         enum: ['user' , 'admin'],
