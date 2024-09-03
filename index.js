@@ -26,25 +26,11 @@ app.use(cors({
     'https://wisemansaid-git-master-ravi-kouravs-projects.vercel.app', 
     'https://wisemansaid-qhjhqbmtq-ravi-kouravs-projects.vercel.app' 
   ],
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  credentials: true
+  methods: ['GET', 'POST', 'PUT', 'DELETE']
 }));
 
 // Middleware
 app.use(express.json());
-app.use(cookieParser());
-
-// Example of setting a cookie with appropriate attributes
-app.use((req, res, next) => {
-  if (process.env.NODE_ENV === 'production') {
-    res.cookie('authToken', req.cookies.authToken, {
-      httpOnly: true,
-      secure: true, // Ensures cookie is only sent over HTTPS
-      sameSite: 'None', // Allows cookies to be sent with cross-site requests
-    });
-  }
-  next();
-});
 
 // Routes
 app.use('/api/user', userRoutes);
