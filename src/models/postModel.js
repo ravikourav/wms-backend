@@ -2,8 +2,9 @@ import mongoose, { model } from "mongoose";
 
 // Define the reply schema
 const replySchema = new mongoose.Schema({
-    username: {
-        type: String,
+    reply_author: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
         required: true
     },
     reply: {
@@ -19,8 +20,9 @@ const replySchema = new mongoose.Schema({
 
 // Define the comment schema
 const commentSchema = new mongoose.Schema({
-    username: {
-        type: String,
+    comment_author: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
         required: true
     },
     comment: {

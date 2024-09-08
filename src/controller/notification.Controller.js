@@ -6,7 +6,20 @@ import { User } from '../models/userModel.js';
 // @route GET /api/notifications
 // @access Private
 export const getNotifications = expressAsyncHandler(async (req, res) => {
-    const user = await User.findById(req.user.id).select('notifications');
+    const user = await User.findById(req.user.id).populate({
+        path: 'notifications',
+        populate: [
+            {
+                path: 'post',
+                select: 'backgroundImage',
+            },
+            {
+                path: 'sender', // Assuming you have a user field in the notification schema
+                select: 'avatar username', // populate the user with their profile picture and username
+            },
+        ],
+    });
+
     if (!user) {
         res.status(404);
         throw new Error('User not found');
@@ -14,40 +27,12 @@ export const getNotifications = expressAsyncHandler(async (req, res) => {
     res.status(200).json(user.notifications);
 });
 
-// @desc Add a new notification
-// @route POST /api/notifications
-// @access Private
-export const addNotification = expressAsyncHandler(async (req, res) => {
-    const { id, type, title, message } = req.body;
-
-    const user = await User.findById(id);
-    if (!user) {
-        res.status(404);
-        throw new Error('User not found');
-    }
-
-    if (!id || !type || !title || !message ) {
-        res.status(400);
-        throw new Error('All fields are required');
-    }
-
-    const newNotification = {
-        type,
-        title,
-        message,
-        read: false,
-    };
-
-    user.notifications.push(newNotification);
-    await user.save();
-    res.status(201).json(user.notifications);
-});
-
 // @desc Mark a notification as read
-// @route PUT /api/notifications/:id/read
+// @route PUT /api/notifications/:notificationId/read
 // @access Private
 export const markAsRead = expressAsyncHandler(async (req, res) => {
     const { notificationId } = req.params;
+
     const user = await User.findById(req.user.id);
 
     if (!user) {
@@ -56,6 +41,7 @@ export const markAsRead = expressAsyncHandler(async (req, res) => {
     }
 
     const notification = user.notifications.id(notificationId);
+    
     if (!notification) {
         res.status(404);
         throw new Error('Notification not found');

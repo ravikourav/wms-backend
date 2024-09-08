@@ -195,12 +195,10 @@ export const followUser = expressAsyncHandler(async (req, res) => {
     // Create a notification for the user being followed
     const newNotification = {
         type: 'follow',
-        title: 'New Follower',
-        message: `${currentUser.username} has started following you.`,
+        sender : currentUserId,
         read: false,
     };
-
-    userToFollow.notifications.push(newNotification); // Add the notification directly to the user model
+    userToFollow.notifications.unshift(newNotification);
 
     // Save the changes
     await currentUser.save();
@@ -237,9 +235,9 @@ export const unFollowUser = expressAsyncHandler(async (req , res) => {
     currentUser.following.pull(userIdToUnfollow);
     userToUnfollow.followers.pull(currentUserId);
 
-     // Remove the notification related to the unfollow action
-     userToUnfollow.notifications = userToUnfollow.notifications.filter(
-        (notification) => !(notification.type === 'follow' && notification.message.includes(currentUser.username + ' has started following you.'))
+    // Remove the notification related to the unfollow action
+    userToUnfollow.notifications = userToUnfollow.notifications.filter(
+        (notification) => !(notification.type === 'follow' && notification.sender == currentUserId)
     );
 
     await currentUser.save();

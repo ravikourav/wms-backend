@@ -94,7 +94,14 @@ export const getPost = expressAsyncHandler(async (req, res) => {
   const post = await Post.findOne({ _id: id}).populate({
     path: 'owner_id',
     select: 'username followers avatar',
-    
+  })
+  .populate({
+    path: 'comments.comment_author',
+    select: 'username avatar',
+  })
+  .populate({
+    path: 'comments.replies.reply_author',
+    select: 'username avatar',
   });
 
   if (!post) {
@@ -164,19 +171,22 @@ export const likePost = expressAsyncHandler(async (req, res) => {
   post.likes.push(req.user.id);
 
   //handle notification
-  const postOwner = await User.findById(post.owner_id);
-  if(userId !== post.owner_id){
+  if(userId != post.owner_id){
+    const postOwner = await User.findById(post.owner_id);
     const notification ={
       type: 'like',
-      title: 'New Like',
-      message: `${req.user.username} liked your post.`,
+      post: postId,
+      sender: userId,
+      data: {
+        context : 'post'
+      },
       read: false
     }
-    postOwner.notifications.push(notification);
+    postOwner.notifications.unshift(notification);
+    await postOwner.save();
   }
 
   await post.save();
-  await postOwner.save();
   res.status(200).json({likes : post.likes});
 });
 
@@ -199,6 +209,20 @@ export const unlikePost = expressAsyncHandler(async (req, res) => {
   }
 
   post.likes = post.likes.filter(id=>id.toString() !== userId);
+
+  // Remove the notification
+  if(userId != post.owner_id){
+    const postOwner = await User.findById(post.owner_id);
+    postOwner.notifications = postOwner.notifications.filter(
+    (notification) => !(
+      notification.type === 'like' &&
+      notification.post == postId &&
+      notification.sender == userId && 
+      notification.data.context === 'post'
+    ))
+    await postOwner.save();
+  };
+
   await post.save();
   res.status(200).json({likes : post.likes});
 });
@@ -209,6 +233,7 @@ export const unlikePost = expressAsyncHandler(async (req, res) => {
 export const addComment = expressAsyncHandler(async (req, res) => {
   const { postId } = req.params;
   const { comment } = req.body;
+  const userId = req.user.id;
 
   if (!comment || comment.length < 1) {
     res.status(400);
@@ -223,81 +248,72 @@ export const addComment = expressAsyncHandler(async (req, res) => {
   }
 
   const newComment = {
-    username: req.user.username,
+    comment_author: userId,
     comment,
-    likes: [],
-    date: new Date()
+    likes: []
   };
 
   post.comments.push(newComment);
-  
+
   //handle notification
-  const postOwner = await User.findById(post.owner_id);
-  if(req.user.id !== post.owner_id){
+  if(userId != post.owner_id){
+    const postOwner = await User.findById(post.owner_id);
     const notification = {
       type: 'comment',
-      title: 'New Comment',
-      message: `${req.user.username} commented on your post.`,
+      post: postId,
+      sender: userId,
+      data : {
+        comment
+      },
       read: false,
     }
-    postOwner.notifications.push(notification);
+    postOwner.notifications.unshift(notification);
+    await postOwner.save();
   }
 
   await post.save();
-  await postOwner.save();
-  res.status(201).json({comment: post.comments});
+  const commentFromDb = post.comments[post.comments.length - 1];
+  await Post.populate(commentFromDb, {
+    path: 'comment_author',
+    select: 'username avatar'
+  });
+  res.status(201).json({ comment: commentFromDb });
 });
 
-
-// @desc Add a reply to a comment
-// @route POST /api/post/:postId/comment/:commentId/reply
+// @desc Delete a comment from a post
+// @route DELETE /api/post/:postId/comment/:commentId
 // @access Private
-export const addReply = expressAsyncHandler(async (req, res) => {
+export const deleteComment = expressAsyncHandler(async (req, res) => {
   const { postId, commentId } = req.params;
-  const { comment } = req.body;
-
-  if (!comment) {
-    res.status(400);
-    throw new Error('Reply text is required');
-  }
+  const userId = req.user.id;
 
   const post = await Post.findById(postId);
 
   if (!post) {
     res.status(404);
-    throw new Error("Post not found");
+    throw new Error('Post not found');
   }
 
-  const replyTo = post.comments.id(commentId);
-  if (!replyTo) {
+  // Find the comment
+  const comment = post.comments.id(commentId);
+
+  if (!comment) {
     res.status(404);
-    throw new Error("Comment not found");
+    throw new Error('Comment not found');
   }
 
-  const newReply = {
-    username: req.user.username,
-    reply: comment,
-    likes: [],
-    date: new Date()
-  };
-  
-  replyTo.replies.push(newReply);
-
-  // Create notification for the comment author
-  const commentAuthor = await User.findOne({ 'comments._id': commentId });
-  if (commentAuthor !== req.user.id) {
-    const notification = new Notification({
-      type: 'reply',
-      title: 'New Reply',
-      message: `${req.user.username} replied to your comment.`,
-      read: false
-    });
-    commentAuthor.notifications.push(notification);
+  // Check if the user is the author of the comment or the post owner
+  if (comment.comment_author != userId && post.owner_id != userId) {
+    res.status(403);
+    throw new Error('You are not authorized to delete this comment');
   }
+
+  // Remove the comment
+  post.comments.pull(commentId);
 
   await post.save();
-  await commentAuthor.save();
-  res.status(201).json(post);
+
+  res.status(200).json({ message: 'Comment deleted successfully' });
 });
 
 // @desc Like a comment
@@ -306,6 +322,7 @@ export const addReply = expressAsyncHandler(async (req, res) => {
 export const likeComment = expressAsyncHandler(async (req, res) => {
   const { postId, commentId } = req.params;
   const post = await Post.findById(postId);
+  const userId = req.user.id;
 
   if (!post) {
     res.status(404);
@@ -318,12 +335,31 @@ export const likeComment = expressAsyncHandler(async (req, res) => {
     throw new Error("Comment not found");
   }
 
-  if (comment.likes.includes(req.user.id)) {
+  if (comment.likes.includes(userId)) {
     res.status(400)
     throw new Error('You have already liked this comment');
   }
 
-  comment.likes.push(req.user.id);
+  comment.likes.push(userId);
+
+  //handle notification
+  if(userId != comment.comment_author ){
+    const commentAuthor = await User.findById(comment.comment_author);
+    const notification ={
+      type: 'like',
+      post: postId,
+      sender: userId,
+      data : {
+        context: 'comment',
+        itemId: commentId,
+        comment: comment.comment
+      },
+      read: false
+    }
+    commentAuthor.notifications.unshift(notification);
+    await commentAuthor.save();
+  }
+
   await post.save();
   res.status(200).json({likes : comment.likes});
 });
@@ -353,8 +389,83 @@ export const unlikeComment = expressAsyncHandler(async (req, res) => {
   }
 
   comment.likes = comment.likes.filter(id=>id.toString() !== userId);
+
+  // Remove the notification
+  if(userId != comment.comment_author){
+    const commentAuthor = await User.findById(comment.comment_author);
+    commentAuthor.notifications = commentAuthor.notifications.filter(
+    (notification) => !(
+      notification.type === 'like' &&
+      notification.post == postId &&
+      notification.sender == userId && 
+      notification.data.context === 'comment' &&
+      notification.data.itemId == commentId
+    ))
+    await commentAuthor.save();
+  };
+
   await post.save();
   res.status(200).json({likes : comment.likes});
+});
+
+
+// @desc Add a reply to a comment
+// @route POST /api/post/:postId/comment/:commentId/reply
+// @access Private
+export const addReply = expressAsyncHandler(async (req, res) => {
+  const { postId, commentId } = req.params;
+  const { comment } = req.body;
+  const userId = req.user.id;
+
+  if (!comment) {
+    res.status(400);
+    throw new Error('Reply text is required');
+  }
+
+  const post = await Post.findById(postId);
+
+  if (!post) {
+    res.status(404);
+    throw new Error("Post not found");
+  }
+
+  const replyTo = post.comments.id(commentId);
+  if (!replyTo) {
+    res.status(404);
+    throw new Error("Comment not found");
+  }
+
+  const newReply = {
+    reply_author: userId,
+    reply: comment,
+    likes: []
+  };
+  
+  replyTo.replies.push(newReply);
+
+  // Create notification for the comment author
+  if (userId != replyTo.comment_author) {
+    const commentAuthor = await User.findById(replyTo.comment_author);
+    const notification = {
+      type: 'reply',
+      post: postId,
+      sender: userId,
+      data: {
+        comment
+      },
+      read: false
+    };
+    commentAuthor.notifications.unshift(notification);
+    await commentAuthor.save();
+  }
+
+  await post.save();
+  const replyFromDb = replyTo.replies[replyTo.replies.length - 1];
+  await Post.populate(replyFromDb, {
+    path: 'reply_author',
+    select: 'username avatar'
+  });
+  res.status(201).json({ reply: replyFromDb });
 });
 
 // @desc Like a reply
@@ -363,6 +474,7 @@ export const unlikeComment = expressAsyncHandler(async (req, res) => {
 export const likeReply = expressAsyncHandler(async (req, res) => {
   const { postId, commentId, replyId } = req.params;
   const post = await Post.findById(postId);
+  const userId = req.user.id;
 
   if (!post) {
     res.status(404);
@@ -381,12 +493,31 @@ export const likeReply = expressAsyncHandler(async (req, res) => {
     throw new Error("Reply not found");
   }
 
-  if (reply.likes.includes(req.user.id)) {
+  if (reply.likes.includes(userId)) {
     res.status(400);
     throw new Error("You have already liked this reply");
   }
 
-  reply.likes.push(req.user.id);
+  reply.likes.push(userId);
+
+  //handle notification
+  if(userId != reply.reply_author){
+    const replyAuthor = await User.findById(reply.reply_author);
+    const notification ={
+      type: 'like',
+      post: postId,
+      sender: userId,
+      data : {
+        context: 'reply',
+        itemId: replyId,
+        comment: reply.comment
+      },
+      read: false
+    }
+    replyAuthor.notifications.unshift(notification);
+    await replyAuthor.save();
+  }
+
   await post.save();
   res.status(200).json({likes :reply.likes});
 });
@@ -397,6 +528,7 @@ export const likeReply = expressAsyncHandler(async (req, res) => {
 export const unlikeReply = expressAsyncHandler(async (req, res) => {
   const { postId, commentId, replyId } = req.params;
   const post = await Post.findById(postId);
+  const userId = req.user.id;
 
   if (!post) {
     res.status(404);
@@ -422,6 +554,66 @@ export const unlikeReply = expressAsyncHandler(async (req, res) => {
   }
 
   reply.likes.splice(userIndex, 1);
+  
+  // Remove the notification
+  if(userId != reply.reply_author){
+    const replyAuthor = await User.findById(reply.reply_author);
+    replyAuthor.notifications = reply.notifications.filter(
+    (notification) => !(
+      notification.type === 'like' &&
+      notification.post == postId &&
+      notification.sender == userId && 
+      notification.data.context === 'reply' &&
+      notification.data.itemId == replyId
+    ))
+    await replyAuthor.save();
+  };
+
   await post.save();
   res.status(200).json({likes :reply.likes});
+});
+
+// @desc Delete a reply from a comment
+// @route DELETE /api/post/:postId/comment/:commentId/reply/:replyId
+// @access Private
+export const deleteReply = expressAsyncHandler(async (req, res) => {
+  const { postId, commentId, replyId } = req.params;
+  const userId = req.user.id;
+
+  const post = await Post.findById(postId);
+
+  if (!post) {
+    res.status(404);
+    throw new Error('Post not found');
+  }
+
+  // Find the comment
+  const comment = post.comments.id(commentId);
+
+  if (!comment) {
+    res.status(404);
+    throw new Error('Comment not found');
+  }
+
+  // Find the reply
+  const reply = comment.replies.id(replyId);
+
+  if (!reply) {
+    res.status(404);
+    throw new Error('Reply not found');
+  }
+
+  // Check if the user is the author of the reply, comment, or post owner
+  if (reply.reply_author.toString() !== userId && 
+      comment.comment_author.toString() !== userId && 
+      post.owner_id.toString() !== userId) {
+    res.status(403);
+    throw new Error('You are not authorized to delete this reply');
+  }
+
+  // Remove the reply
+  comment.replies.pull(replyId);
+
+  await post.save();
+  res.status(200).json({ message: 'Reply deleted successfully' });
 });
