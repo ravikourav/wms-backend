@@ -75,7 +75,6 @@ export const registerUser = expressAsyncHandler(async (req, res) => {
             name: createdUser.name,
             username: createdUser.username,
             email: createdUser.email,
-            role : createdUser.role
         }
     },process.env.ACCESS_TOKEN_SECRET,{expiresIn:'7d'});
 
@@ -134,13 +133,28 @@ export const currentUser = expressAsyncHandler(async (req, res) => {
 //@access public 
 export const getUser = expressAsyncHandler(async(req, res)=>{
     const { username } = req.params;
-    const user = await User.findOne({username})
-        .populate('posts') // Populate posts
-        .populate('saved'); // Populate saved posts
+
+    const user = await User.findOne({ username })
+        .populate({
+            path: 'posts',
+            populate: {
+                path: 'owner_id', // Populate the author field in posts
+                select: 'username name avatar', // Only return username and avatar for the author
+            }
+        })
+        .populate({
+            path: 'saved',
+            populate: {
+                path: 'owner_id', // Populate the author field in saved posts
+                select: 'username name avatar', // Only return username and avatar for the author
+            }
+        });
+
     if (!user) {
         res.status(404);
         throw new Error('User not found');
     }
+
     user.password = undefined;
     user.notifications = undefined;
     res.status(200).json(user);
@@ -246,19 +260,6 @@ export const unFollowUser = expressAsyncHandler(async (req , res) => {
     res.status(200).json({ message: "User unfollowed successfully" , followers: userToUnfollow.followers  });
 });
 
-//@desc isfollow User
-//@route GET/api/user/:userId/isfollowing
-//@access private  
-export const checkFollowingStatus = expressAsyncHandler(async(req,res)=>{
-    const userToCheck = req.params.userId;
-    const currentUser = req.user.id;
-
-    const user = await User.findById(currentUser);
-    const isfollowing = user.following.includes(userToCheck);
-
-    res.status(200).json({isfollowing});
-});
-
 //@desc update User
 //@route PUT/api/user/:username/update
 //@access private  
@@ -302,22 +303,4 @@ export const updateUser = expressAsyncHandler(async (req, res) => {
     user.password = undefined;
     user.notifications = undefined;
     res.status(200).json({ message: 'User updated successfully', user });
-});
-
-//@desc Get Profile Picture URL
-//@route GET/api/user/:username/getProfilePicture
-//@access public
-export const getProfilePicture = expressAsyncHandler(async (req, res) => {
-    const { username } = req.params;
-    
-    // Find the user by username
-    const user = await User.findOne({ username });
-    
-    if (!user) {
-        res.status(404);
-        throw new Error('User not found');
-    }
-    
-    // Respond with the profile picture URL
-    res.status(200).json({ profilePicture: user.avatar });
 });

@@ -1,5 +1,5 @@
 import express from 'express';
-import { getAllPosts, getUserPosts, createPost, getPost, updatePost, deletePost, likePost, unlikePost, addComment, likeComment, addReply, likeReply, unlikeComment, unlikeReply, deleteComment, deleteReply} from '../controller/post.Controller.js';
+import { getAllPosts, getUserPosts, createPost, getPost, updatePost, deletePost, likePost, unlikePost, addComment, likeComment, addReply, likeReply, unlikeComment, unlikeReply, deleteComment, deleteReply, savePost, unsavePost} from '../controller/post.Controller.js';
 import validateToken from '../middleware/tokenValidationHandler.js';
 import { upload } from '../middleware/multer.js';
 
@@ -23,6 +23,8 @@ router.use(validateToken(['user', 'admin']));
 router.post('/create', upload.single('backgroundImage'), createPost);
 router.put('/:id', updatePost);
 router.delete('/:id', deletePost);
+router.put('/:postId/save', savePost);
+router.put('/:postId/unsave', unsavePost);
 router.post('/:postId/like', likePost);
 router.post('/:postId/unlike', unlikePost);
 

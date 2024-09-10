@@ -10,8 +10,9 @@ import uploadOnCloudinary from '../utils/Cloudnary.js';
 export const getAllPosts = expressAsyncHandler(async (req, res) => {
   const posts = await Post.find({}).populate({
     path: 'owner_id',
-    select: 'username avatar'
+    select: 'username name avatar'
   });
+  
   res.json(posts);
 });
 
@@ -148,6 +149,60 @@ export const deletePost = expressAsyncHandler(async (req, res) => {
   await post.remove();
   res.status(200).json({ message: 'Post deleted' });
 });
+
+//@desc Delete a post by ID
+//@route PUT/api/post/:postId/save
+//@access private
+export const savePost = expressAsyncHandler(async (req, res) => {
+  const { postId } = req.params;
+  const userId = req.user.id;
+
+  const user = await User.findById(userId);
+
+  if (!user) {
+    res.status(404);
+    throw new Error('User not found');
+  }
+
+  // Check if the post is already in the saved list
+  if (user.saved.includes(postId)) {
+    return res.status(400).json({ message: 'Post already saved' });
+  }
+  else{
+    //add postId to user saved array
+    user.saved.push(postId);
+
+    await user.save();
+    res.status(200).json({ message: 'Post Saved' });
+  }
+});
+
+//@desc Unsave a post by ID
+//@route PUT /api/post/:postId/unsave
+//@access private
+export const unsavePost = expressAsyncHandler(async (req, res) => {
+  const { postId } = req.params;
+  const userId = req.user.id;
+
+  const user = await User.findById(userId);
+
+  if (!user) {
+    res.status(404);
+    throw new Error('User not found');
+  }
+
+  // Check if the post is in the saved list
+  if (!user.saved.includes(postId)) {
+    return res.status(400).json({ message: 'Post not found in saved list' });
+  } else {
+    // Remove postId from user saved array
+    user.saved = user.saved.filter((id) => id != postId);
+
+    await user.save();
+    res.status(200).json({ message: 'Post Unsaved' });
+  }
+});
+
 
 // @desc Like a post
 // @route PUT /api/post/:postId/like
