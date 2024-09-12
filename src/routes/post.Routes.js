@@ -21,7 +21,7 @@ router.use(validateToken(['user', 'admin']));
 
 //post routes
 router.post('/create', upload.single('backgroundImage'), createPost);
-router.put('/:id', updatePost);
+router.put('/:id', upload.single('backgroundImage'), updatePost);
 router.delete('/:id', deletePost);
 router.put('/:postId/save', savePost);
 router.put('/:postId/unsave', unsavePost);

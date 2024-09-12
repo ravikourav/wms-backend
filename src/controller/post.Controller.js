@@ -87,6 +87,40 @@ export const createPost = expressAsyncHandler(async (req, res) => {
   res.status(201).json(savedPost);
 });
 
+//@desc Update post by ID
+//@route PUT /api/post/:id
+//@access private
+export const updatePost = expressAsyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const updateData = req.body;
+
+  const backgroundImagePath = req.file?.path;  // Optional new image
+
+  const post = await Post.findOne({ _id: id, owner_id: req.user.id });
+
+  if (!post) {
+    res.status(404);
+    throw new Error("Post not found");
+  }
+
+  // Update the post fields dynamically
+  Object.keys(updateData).forEach(key => {
+    post[key] = updateData[key];
+  });
+
+  // If a new image is provided, upload it and update the image fields
+  if (backgroundImagePath) {
+    const backgroundImageCloudinary = await uploadOnCloudinary(backgroundImagePath);
+    post.backgroundImage = backgroundImageCloudinary.url;
+    post.width = backgroundImageCloudinary.width;
+    post.height = backgroundImageCloudinary.height;
+  }
+
+  const updatedPost = await post.save();
+  res.status(200).json(updatedPost);
+});
+
+
 //@desc Get post by ID
 //@route GET/api/post/:id
 //@access public
@@ -111,26 +145,6 @@ export const getPost = expressAsyncHandler(async (req, res) => {
   }
 
   res.status(200).json(post);
-});
-
-//@desc Update post by ID
-//@route PUT/api/post/:id
-//@access private
-export const updatePost = expressAsyncHandler(async (req, res) => {
-  const { id } = req.params;
-  const updateData = req.body;
-
-  const post = await Post.findOne({ _id: id, owner_id: req.user.id });
-
-  if (!post) {
-    res.status(404);
-    throw new Error('Post not found');
-  }
-
-  Object.assign(post, updateData);
-  const updatedPost = await post.save();
-
-  res.status(200).json(updatedPost);
 });
 
 //@desc Delete a post by ID
