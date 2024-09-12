@@ -160,7 +160,10 @@ export const deletePost = expressAsyncHandler(async (req, res) => {
     throw new Error('Post not found');
   }
 
-  await post.remove();
+  await post.deleteOne()
+  // Remove related notifications
+  await Notification.deleteMany({ postId: id });
+
   res.status(200).json({ message: 'Post deleted' });
 });
 
