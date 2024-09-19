@@ -24,7 +24,14 @@ export const getTagsName = expressAsyncHandler(async (req, res) => {
 export const getPostsByTag = expressAsyncHandler(async (req, res) => {
     const tagId = req.params.id;
     // Find the tag and populate posts
-    const tag = await Tag.findById(tagId).populate('posts');
+    const tag = await Tag.findById(tagId).populate({
+        path: 'posts',
+        populate: {
+            path: 'owner_id',
+            select: 'username name avatar'
+        }
+    });
+
     if (!tag) {
         res.status(404);
         throw new Error('Tag not found');
