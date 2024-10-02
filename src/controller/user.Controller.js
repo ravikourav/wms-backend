@@ -1,6 +1,5 @@
 import expressAsyncHandler from "express-async-handler";
 import { User } from "../models/userModel.js";
-import { Notification } from '../models/notificationModel.js';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import uploadOnCloudinary from "../utils/Cloudnary.js";
@@ -139,14 +138,14 @@ export const getUser = expressAsyncHandler(async(req, res)=>{
             path: 'posts',
             populate: {
                 path: 'owner_id', // Populate the author field in posts
-                select: 'username name avatar', // Only return username and avatar for the author
+                select: 'username name avatar badge', // Only return username and avatar for the author
             }
         })
         .populate({
             path: 'saved',
             populate: {
                 path: 'owner_id', // Populate the author field in saved posts
-                select: 'username name avatar', // Only return username and avatar for the author
+                select: 'username name avatar badge', // Only return username and avatar for the author
             }
         });
 

@@ -10,7 +10,7 @@ const tagSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
-    imageURL: { 
+    backgroundImage: { 
         type: String,
         required: true,
     },

@@ -3,12 +3,13 @@ import dotenv from 'dotenv';
 import cors from 'cors';
 import errorHandler from './src/middleware/errorHandler.js';
 import connectDB from './src/db/db.js';
-import cookieParser from 'cookie-parser';
 
 import postRoutes from './src/routes/post.Routes.js';
 import userRoutes from './src/routes/user.Routes.js';
 import tagRoutes from './src/routes/tag.Routes.js';
 import notificationRoutes from './src/routes/notification.Routes.js';
+
+import adminRoutes from './src/routes/admin.Routes.js';
 
 dotenv.config();
 
@@ -22,6 +23,7 @@ connectDB();
 app.use(cors({
   origin: [
     'http://localhost:3000',
+    'http://localhost:3001',
     'https://wisemansaid.vercel.app',
     'https://wisemansaid-git-master-ravi-kouravs-projects.vercel.app', 
     'https://wisemansaid-qhjhqbmtq-ravi-kouravs-projects.vercel.app' 
@@ -37,6 +39,8 @@ app.use('/api/user', userRoutes);
 app.use('/api/post', postRoutes);
 app.use('/api/tag' , tagRoutes);
 app.use('/api/notifications', notificationRoutes);
+
+app.use('/api/admin' , adminRoutes);
 
 // Error handling middleware
 app.use(errorHandler);

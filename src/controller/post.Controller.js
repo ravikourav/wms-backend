@@ -10,7 +10,7 @@ import uploadOnCloudinary from '../utils/Cloudnary.js';
 export const getAllPosts = expressAsyncHandler(async (req, res) => {
   const posts = await Post.find({}).populate({
     path: 'owner_id',
-    select: 'username name avatar'
+    select: 'username name avatar badge'
   });
   
   res.json(posts);
@@ -40,7 +40,7 @@ export const createPost = expressAsyncHandler(async (req, res) => {
 
   if(!backgroundImagePath){
     res.status(400);
-    throw new Error("image validation failed");
+    throw new Error("image is required");
   }
 
   const tagsArray = tags.split(',').map(tag => tag.trim());
@@ -128,15 +128,15 @@ export const getPost = expressAsyncHandler(async (req, res) => {
   const { id } = req.params;
   const post = await Post.findOne({ _id: id}).populate({
     path: 'owner_id',
-    select: 'username followers avatar',
+    select: 'username name followers avatar badge',
   })
   .populate({
     path: 'comments.comment_author',
-    select: 'username avatar',
+    select: 'name username avatar badge',
   })
   .populate({
     path: 'comments.replies.reply_author',
-    select: 'username avatar',
+    select: 'name username avatar badge',
   });
 
   if (!post) {

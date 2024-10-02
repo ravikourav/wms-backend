@@ -1,5 +1,6 @@
 import expressAsyncHandler from 'express-async-handler';
 import { Tag } from '../models/tagModel.js';
+import uploadOnCloudinary from '../utils/Cloudnary.js';
 
 // @desc Get all tags
 // @route GET /api/tag/all
@@ -28,7 +29,7 @@ export const getPostsByTag = expressAsyncHandler(async (req, res) => {
         path: 'posts',
         populate: {
             path: 'owner_id',
-            select: 'username name avatar'
+            select: 'username name avatar badge'
         }
     });
 
@@ -44,13 +45,23 @@ export const getPostsByTag = expressAsyncHandler(async (req, res) => {
 // @route POST /api/tag/create
 // @access Private Admin
 export const createTag = expressAsyncHandler(async (req, res) => {
-    const { tag, tagLine, imageURL } = req.body;
+    const { tag, tagLine} = req.body;
     const existingTag = await Tag.findOne({ tag });
+    
+    const backgroundImagePath = req.file.path;
+
+    if(!backgroundImagePath){
+        res.status(400);
+        throw new Error("image is required");
+    }
+
+    const backgroundImageCloudnary = await uploadOnCloudinary(backgroundImagePath);
+
     if (existingTag) {
         res.status(400);
         throw new Error('Tag already exists');
     }
-    const newTag = new Tag({ tag, tagLine, imageURL , posts : []});
+    const newTag = new Tag({ tag, tagLine, backgroundImage: backgroundImageCloudnary.url , posts : []});
     await newTag.save();
     res.status(201).json(newTag);
 });
