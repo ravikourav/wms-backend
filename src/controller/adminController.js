@@ -2,6 +2,7 @@ import expressAsyncHandler from "express-async-handler";
 import { User } from "../models/userModel.js";
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import { BadgeAssignmentLog } from '../models/badgeAssignmentLogModel.js';
 
 // @desc Assign a badge to a user
 // @route PUT /api/admin/assignBadge/:userId
@@ -9,9 +10,10 @@ import jwt from 'jsonwebtoken';
 export const assignBadge = expressAsyncHandler(async (req, res) => {
     const { badge } = req.body;
     const { userId } = req.params;
+    const adminId = req.user.id;
 
     // Check if the badge is valid
-    const validBadges = ['blue', 'green', 'gold', 'none'];
+    const validBadges = ['blue', 'green', 'gold', 'red' , 'none'];
     if (!validBadges.includes(badge)) {
         res.status(400);
         throw new Error('Invalid badge type!');
@@ -28,6 +30,13 @@ export const assignBadge = expressAsyncHandler(async (req, res) => {
     // Update the user's badge
     user.badge = badge;
     await user.save();
+
+    // Log the badge assignment
+    await BadgeAssignmentLog.create({
+        user: user._id,
+        badge,
+        assignedBy: adminId, // The ID of the admin making the assignment
+    });
 
     res.status(200).json({
         message: `Badge ${badge} assigned to user ${user.username} successfully!`,

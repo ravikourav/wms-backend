@@ -55,7 +55,7 @@ const userSchema = new mongoose.Schema({
     },
     badge: {
         type: String,
-        enum: ['blue', 'green', 'gold', 'none'],
+        enum: ['blue', 'green', 'gold', 'red', 'none'],
         default: 'none'
     }
 }, { timestamps: true });
