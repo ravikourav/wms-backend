@@ -2,7 +2,7 @@ import expressAsyncHandler from 'express-async-handler';
 import { Post } from '../models/postModel.js';
 import { User } from '../models/userModel.js';
 import { Tag }  from '../models/tagModel.js';
-import uploadOnCloudinary from '../utils/Cloudnary.js';
+import uploadOnCloudinary from '../utils/Cloudinary.js';
 
 // @desc Get all posts
 // @route GET /api/post/all
@@ -10,7 +10,7 @@ import uploadOnCloudinary from '../utils/Cloudnary.js';
 export const getAllPosts = expressAsyncHandler(async (req, res) => {
   const posts = await Post.find({}).populate({
     path: 'owner_id',
-    select: 'username name avatar badge'
+    select: 'username name profile badge'
   });
   
   res.json(posts);
@@ -29,23 +29,22 @@ export const getUserPosts = expressAsyncHandler(async (req, res) => {
 //@route POST/api/post/create
 //@access private
 export const createPost = expressAsyncHandler(async (req, res) => {
-  const { title, content, author, category, tags, contentColor, authorColor, tintColor} = req.body;
- 
-  if (!title || !content || !author || !category || !tags || !contentColor || !authorColor || !tintColor ) {
+  const { title, content, author, category, tags, contentColor, authorColor, tintColor } = req.body;
+  const user = await User.findById(req.user.id);
+
+  if (!user) {
+    res.status(404);
+    throw new Error("User not found");
+  }
+
+  if (!title || !content || !author || !category || !tags || !contentColor || !authorColor || !tintColor) {
     res.status(400);
     throw new Error("Post validation failed");
   }
 
-  const backgroundImagePath = req.file?.path;
-
-  if(!backgroundImagePath){
-    res.status(400);
-    throw new Error("image is required");
-  }
-
   const tagsArray = tags.split(',').map(tag => tag.trim());
 
-  const backgroundImageCloudnary = await uploadOnCloudinary(backgroundImagePath);
+  // Step 1: Create the post without the image first to get the post ID
   const newPost = new Post({
     owner_id: req.user.id,
     title,
@@ -56,36 +55,50 @@ export const createPost = expressAsyncHandler(async (req, res) => {
     contentColor,
     authorColor,
     tintColor,
-    backgroundImage: backgroundImageCloudnary.url,
-    width:backgroundImageCloudnary.width,
-    height: backgroundImageCloudnary.height,
+    backgroundImage: 'uploading',
     likes: [],
     comments: []
   });
-  const savedPost = await newPost.save();
-
-  const user = await User.findById(req.user.id);
-  if (!user) {
-    res.status(404);
-    throw new Error("User not found");
-  }
   
+  const savedPost = await newPost.save();  // Save the post and get the post ID
+
+  // Step 2: Check if image is present and upload to Cloudinary
+  const backgroundImagePath = req.file?.path;
+
+  if (!backgroundImagePath) {
+    res.status(400);
+    throw new Error("Image is required");
+  }
+
+  // Upload image to Cloudinary using post ID in the public ID
+  const backgroundImageCloudinary = await uploadOnCloudinary(backgroundImagePath, user.username, 'post', savedPost._id);
+
+  // Step 3: Update the post with the Cloudinary image URL and dimensions
+  savedPost.backgroundImage = backgroundImageCloudinary.url;
+  savedPost.width = backgroundImageCloudinary.width;
+  savedPost.height = backgroundImageCloudinary.height;
+
+  await savedPost.save();  // Save the updated post
+
+  // Step 4: Associate the post with the tags
   for (let tagName of tagsArray) {
     let tag = await Tag.findOne({ tag: tagName });
 
     if (!tag) {
-      throw new Error('tag not found' , tagName)
+      throw new Error('Tag not found: ' + tagName);
     } else {
       tag.posts.push(savedPost._id);
     }
     await tag.save();
   }
 
-  user.posts.push(savedPost.id);
+  // Step 5: Update user with new post
+  user.posts.push(savedPost._id);
   await user.save();
-  
+
   res.status(201).json(savedPost);
 });
+
 
 //@desc Update post by ID
 //@route PUT /api/post/:id
@@ -110,7 +123,7 @@ export const updatePost = expressAsyncHandler(async (req, res) => {
 
   // If a new image is provided, upload it and update the image fields
   if (backgroundImagePath) {
-    const backgroundImageCloudinary = await uploadOnCloudinary(backgroundImagePath);
+    const backgroundImageCloudinary = await uploadOnCloudinary(backgroundImagePath , req.user.username , 'post' , id);
     post.backgroundImage = backgroundImageCloudinary.url;
     post.width = backgroundImageCloudinary.width;
     post.height = backgroundImageCloudinary.height;
@@ -128,15 +141,15 @@ export const getPost = expressAsyncHandler(async (req, res) => {
   const { id } = req.params;
   const post = await Post.findOne({ _id: id}).populate({
     path: 'owner_id',
-    select: 'username name followers avatar badge',
+    select: 'username name followers profile badge',
   })
   .populate({
     path: 'comments.comment_author',
-    select: 'name username avatar badge',
+    select: 'name username profile badge',
   })
   .populate({
     path: 'comments.replies.reply_author',
-    select: 'name username avatar badge',
+    select: 'name username profile badge',
   });
 
   if (!post) {
@@ -347,7 +360,7 @@ export const addComment = expressAsyncHandler(async (req, res) => {
   const commentFromDb = post.comments[post.comments.length - 1];
   await Post.populate(commentFromDb, {
     path: 'comment_author',
-    select: 'username avatar'
+    select: 'username profile'
   });
   res.status(201).json({ comment: commentFromDb });
 });
@@ -535,7 +548,7 @@ export const addReply = expressAsyncHandler(async (req, res) => {
   const replyFromDb = replyTo.replies[replyTo.replies.length - 1];
   await Post.populate(replyFromDb, {
     path: 'reply_author',
-    select: 'username avatar'
+    select: 'username profile'
   });
   res.status(201).json({ reply: replyFromDb });
 });

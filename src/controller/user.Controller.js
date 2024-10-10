@@ -2,7 +2,7 @@ import expressAsyncHandler from "express-async-handler";
 import { User } from "../models/userModel.js";
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import uploadOnCloudinary from "../utils/Cloudnary.js";
+import uploadOnCloudinary from "../utils/Cloudinary.js";
 
 //@desc Register a user
 //@route POST/api/user/register
@@ -29,19 +29,19 @@ export const registerUser = expressAsyncHandler(async (req, res) => {
         throw new Error('User already exists');
     }
 
-    let avatarUrl = '';
+    let profileUrl = '';
     let coverImgUrl = '';
 
-    const avatarLocalPath = req.files?.avatar?.[0]?.path;
+    const profileLocalPath = req.files?.profile?.[0]?.path;
     const coverImgLocalPath = req.files?.coverImg?.[0]?.path;
 
-    if (avatarLocalPath) {
-        const avatar = await uploadOnCloudinary(avatarLocalPath);
-        avatarUrl = avatar.url;
+    if (profileLocalPath) {
+        const profile = await uploadOnCloudinary(req.files.coverImg[0].path , user.username , 'profile');
+        profileUrl = profile.url;
     }
 
     if (coverImgLocalPath) {
-        const coverImg = await uploadOnCloudinary(coverImgLocalPath);
+        const coverImg = await uploadOnCloudinary(req.files.coverImg[0].path , user.username , 'cover');
         coverImgUrl = coverImg.url;
     }
 
@@ -55,7 +55,7 @@ export const registerUser = expressAsyncHandler(async (req, res) => {
         username,
         email,
         password: hashedPassword,
-        avatar: avatarUrl,
+        profile: profileUrl,
         coverImg: coverImgUrl,
         bio: '',
         followers: [],
@@ -138,14 +138,14 @@ export const getUser = expressAsyncHandler(async(req, res)=>{
             path: 'posts',
             populate: {
                 path: 'owner_id', // Populate the author field in posts
-                select: 'username name avatar badge', // Only return username and avatar for the author
+                select: 'username name profile badge', // Only return username and profile for the author
             }
         })
         .populate({
             path: 'saved',
             populate: {
                 path: 'owner_id', // Populate the author field in saved posts
-                select: 'username name avatar badge', // Only return username and avatar for the author
+                select: 'username name profile badge', // Only return username and profile for the author
             }
         });
 
@@ -264,7 +264,7 @@ export const unFollowUser = expressAsyncHandler(async (req , res) => {
 //@access private  
 export const updateUser = expressAsyncHandler(async (req, res) => {
     const { id } = req.params;
-    const {name, bio, removeAvatar, removeCoverImg} = req.body;
+    const {name, bio, removeProfile, removeCoverImg} = req.body;
 
     const user = await User.findById(id);
     if (!user) {
@@ -272,16 +272,16 @@ export const updateUser = expressAsyncHandler(async (req, res) => {
         throw new Error('User not found');
     }
 
-    let avatarUrl = '';
+    let profileUrl = '';
     let coverImgUrl = '';
 
-    if (req.files?.avatar?.[0]?.path) {
-        const avatar = await uploadOnCloudinary(req.files.avatar[0].path);
-        avatarUrl = avatar.url;
+    if (req.files?.profile?.[0]?.path) {
+        const profile = await uploadOnCloudinary(req.files.profile[0].path , user.username , 'profile');
+        profileUrl = profile.url;
     }
 
      if (req.files?.coverImg?.[0]?.path) {
-        const coverImg = await uploadOnCloudinary(req.files.coverImg[0].path);
+        const coverImg = await uploadOnCloudinary(req.files.coverImg[0].path , user.username , 'cover');
         coverImgUrl = coverImg.url;
     }
 
@@ -293,8 +293,8 @@ export const updateUser = expressAsyncHandler(async (req, res) => {
         user.bio = req.body.bio;
     }
 
-    if(removeAvatar || avatarUrl)
-        user.avatar = avatarUrl;
+    if(removeProfile || profileUrl)
+        user.profile = profileUrl;
     if(removeCoverImg || coverImgUrl)
         user.coverImg = coverImgUrl;
     

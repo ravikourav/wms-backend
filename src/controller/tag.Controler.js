@@ -1,6 +1,6 @@
 import expressAsyncHandler from 'express-async-handler';
 import { Tag } from '../models/tagModel.js';
-import uploadOnCloudinary from '../utils/Cloudnary.js';
+import uploadOnCloudinary from '../utils/Cloudinary.js';
 
 // @desc Get all tags
 // @route GET /api/tag/all
@@ -29,7 +29,7 @@ export const getPostsByTag = expressAsyncHandler(async (req, res) => {
         path: 'posts',
         populate: {
             path: 'owner_id',
-            select: 'username name avatar badge'
+            select: 'username name profile badge'
         }
     });
 
@@ -55,13 +55,21 @@ export const createTag = expressAsyncHandler(async (req, res) => {
         throw new Error("image is required");
     }
 
-    const backgroundImageCloudnary = await uploadOnCloudinary(backgroundImagePath);
+    // Upload tag image to Cloudinary
+    const backgroundImageCloudinary = await uploadOnCloudinary(backgroundImagePath, null, 'tag', tag);
 
     if (existingTag) {
         res.status(400);
         throw new Error('Tag already exists');
     }
-    const newTag = new Tag({ tag, tagLine, backgroundImage: backgroundImageCloudnary.url , posts : []});
+    
+    const newTag = new Tag({ 
+        tag,
+        tagLine,
+        backgroundImage: backgroundImageCloudinary.url,
+        posts : []
+    });
+
     await newTag.save();
     res.status(201).json(newTag);
 });
@@ -71,15 +79,32 @@ export const createTag = expressAsyncHandler(async (req, res) => {
 // @access Private Admin
 export const updateTag = expressAsyncHandler(async (req, res) => {
     const { tag, tagLine } = req.body;
-    const updatedTag = await Tag.findByIdAndUpdate(
-        req.params.id,
-        { tag, tagLine },
-        { new: true }
-    ).populate('posts');
-    if (!updatedTag) {
+
+    // Find the tag by ID
+    const tagToUpdate = await Tag.findById(req.params.id);
+
+    if (!tagToUpdate) {
         res.status(404);
         throw new Error('Tag not found');
     }
+
+    // Update the tag fields
+    tagToUpdate.tag = tag || tagToUpdate.tag;
+    tagToUpdate.tagLine = tagLine || tagToUpdate.tagLine;
+    
+    // Check if there's an image to upload
+    const backgroundImagePath = req.file?.path;
+    if (backgroundImagePath) {
+        // Upload the new image to Cloudinary
+        const backgroundImageCloudinary = await uploadOnCloudinary(backgroundImagePath, null, 'tag', tag);
+        
+        // Update the image URL in the tag
+        tagToUpdate.backgroundImage = backgroundImageCloudinary.url;
+    }
+
+    // Save the updated tag
+    const updatedTag = await tagToUpdate.save();
+
     res.status(200).json(updatedTag);
 });
 

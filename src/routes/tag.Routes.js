@@ -14,7 +14,7 @@ router.use(validateToken(['admin']));
 
 //Private Routes Admin Only
 router.post('/create', upload.single('backgroundImage'), createTag);
-router.put('/:id' , updateTag);
+router.put('/:id' , upload.single('backgroundImage'), updateTag);
 router.delete('/:id' , deleteTag);
 
 export default router;

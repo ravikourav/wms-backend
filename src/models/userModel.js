@@ -21,7 +21,7 @@ const userSchema = new mongoose.Schema({
         required: [true, 'Please enter password'],
         minlength: 6 
     },
-    avatar:{
+    profile:{
         type: String
     },
     coverImg:{
