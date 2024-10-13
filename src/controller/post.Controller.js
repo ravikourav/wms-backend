@@ -160,6 +160,32 @@ export const getPost = expressAsyncHandler(async (req, res) => {
   res.status(200).json(post);
 });
 
+//@desc Get comments by post ID
+//@route GET /api/post/:id/getcomments
+//@access public
+export const getComments = expressAsyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  // Find the post by ID and populate comments
+  const post = await Post.findOne({ _id: id })
+    .populate({
+      path: 'comments.comment_author',
+      select: 'name username profile badge',
+    })
+    .populate({
+      path: 'comments.replies.reply_author',
+      select: 'name username profile badge',
+    });
+
+  if (!post) {
+    res.status(404);
+    throw new Error("Post not found");
+  }
+
+  // Return only the comments
+  res.status(200).json(post.comments);
+});
+
 //@desc Delete a post by ID
 //@route DELETE/api/post/:id
 //@access private
