@@ -1,5 +1,6 @@
 import expressAsyncHandler from 'express-async-handler';
 import { Post } from '../models/postModel.js';
+import { Category } from '../models/categoryModel.js';
 import { User } from '../models/userModel.js';
 import { Tag }  from '../models/tagModel.js';
 import uploadOnCloudinary from '../utils/Cloudinary.js';
@@ -80,19 +81,7 @@ export const createPost = expressAsyncHandler(async (req, res) => {
 
   await savedPost.save();  // Save the updated post
 
-  // Step 4: Associate the post with the tags
-  for (let tagName of tagsArray) {
-    let tag = await Tag.findOne({ tag: tagName });
-
-    if (!tag) {
-      throw new Error('Tag not found: ' + tagName);
-    } else {
-      tag.posts.push(savedPost._id);
-    }
-    await tag.save();
-  }
-
-  // Step 5: Update user with new post
+  // Step 4: Update user with new post
   user.posts.push(savedPost._id);
   await user.save();
 

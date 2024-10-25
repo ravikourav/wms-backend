@@ -19,40 +19,44 @@ export const getTagsName = expressAsyncHandler(async (req, res) => {
     res.status(200).json({ names: tagNames });
 });
 
-// @desc Get All posts By tag
-// @route GEt /api/tag/:id/posts
+// @desc Get all posts by tag
+// @route GET /api/tag/:id/posts
 // @access Public
 export const getPostsByTag = expressAsyncHandler(async (req, res) => {
     const tagId = req.params.id;
-    // Find the tag and populate posts
-    const tag = await Tag.findById(tagId).populate({
-        path: 'posts',
-        populate: {
-            path: 'owner_id',
-            select: 'username name profile badge'
-        }
-    });
+    const tag = await Tag.findById(tagId);
 
     if (!tag) {
         res.status(404);
         throw new Error('Tag not found');
     }
-    // Send the populated posts as a response
-    res.json(tag.posts);
+
+    // Fetch posts that match the tag
+    const posts = await Post.find({ tags: tag.tag }).populate({
+        path: 'owner_id',
+        select: 'username name profile badge'
+    });
+
+    if (!posts.length) {
+        res.status(404);
+        throw new Error('No posts found for this tag');
+    }
+
+    res.json(posts);
 });
 
 // @desc Create a new tag
 // @route POST /api/tag/create
 // @access Private Admin
 export const createTag = expressAsyncHandler(async (req, res) => {
-    const { tag, tagLine} = req.body;
+    const { tag, tagLine } = req.body;
     const existingTag = await Tag.findOne({ tag });
-    
-    const backgroundImagePath = req.file.path;
 
-    if(!backgroundImagePath){
+    const backgroundImagePath = req.file?.path; // Using optional chaining
+
+    if (!backgroundImagePath) {
         res.status(400);
-        throw new Error("image is required");
+        throw new Error("Image is required");
     }
 
     // Upload tag image to Cloudinary
@@ -62,12 +66,11 @@ export const createTag = expressAsyncHandler(async (req, res) => {
         res.status(400);
         throw new Error('Tag already exists');
     }
-    
+
     const newTag = new Tag({ 
         tag,
         tagLine,
-        backgroundImage: backgroundImageCloudinary.url,
-        posts : []
+        backgroundImage: backgroundImageCloudinary.url
     });
 
     await newTag.save();

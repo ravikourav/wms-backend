@@ -60,4 +60,7 @@ const userSchema = new mongoose.Schema({
     }
 }, { timestamps: true });
 
+// Add text index for username
+userSchema.index({ username: 'text' });
+
 export const User = mongoose.model('User', userSchema);

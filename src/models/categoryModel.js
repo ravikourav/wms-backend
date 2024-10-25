@@ -1,12 +1,12 @@
 import mongoose from 'mongoose';
 
-const tagSchema = new mongoose.Schema({
-    tag: {
+const categorySchema = new mongoose.Schema({
+    name: {
         type: String,
         required: true,
         unique: true
     },
-    tagLine: {
+    description: {
         type: String,
         required: true,
     },
@@ -16,4 +16,4 @@ const tagSchema = new mongoose.Schema({
     }
 }, { timestamps: true });
 
-export const Tag = mongoose.model('Tag', tagSchema);
+export const Category = mongoose.model('Category', categorySchema);

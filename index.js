@@ -7,7 +7,9 @@ import connectDB from './src/db/db.js';
 import postRoutes from './src/routes/post.Routes.js';
 import userRoutes from './src/routes/user.Routes.js';
 import tagRoutes from './src/routes/tag.Routes.js';
+import categoryRoutes from './src/routes/category.Routes.js';
 import notificationRoutes from './src/routes/notification.Routes.js';
+import searchRoutes  from './src/routes/search.Routes.js';
 
 import adminRoutes from './src/routes/admin.Routes.js';
 
@@ -39,6 +41,8 @@ app.use('/api/user', userRoutes);
 app.use('/api/post', postRoutes);
 app.use('/api/tag' , tagRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/category', categoryRoutes);
+app.use('/api/search', searchRoutes);
 
 app.use('/api/admin' , adminRoutes);
 
