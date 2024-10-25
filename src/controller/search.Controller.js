@@ -21,7 +21,7 @@ export const search = expressAsyncHandler(async (req,res)=>{
     // Find posts by content or title (full-text search)
     const posts = await Post.find({
         $text: { $search: query }
-    });
+    }).populate('owner_id', 'username name badge avatar');
 
     // Combine the search results
     const results = {
