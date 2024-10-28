@@ -7,7 +7,7 @@ const router = express.Router();
 
 //Public Routes
 router.get('/all' , getTags);
-router.get('/name' , getTagsName);
+router.get('/names' , getTagsName);
 router.get('/:id/posts' , getPostsByTag);
 
 router.use(validateToken(['admin']));
