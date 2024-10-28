@@ -10,7 +10,7 @@ const uploadOnCloudinary = async (tempFilePath, username = null, imageType, post
 
   try {
 
-    // Step 2: Set folder and public_id based on image type (profile, cover, postId, or tag)
+    // Step 1: Set folder and public_id based on image type (profile, cover, postId, or tag)
     let folderName;
     let publicId;
     let transformation = {};
@@ -26,7 +26,10 @@ const uploadOnCloudinary = async (tempFilePath, username = null, imageType, post
     } else if (imageType === "tag") {
       folderName = `tags`;  // Correct folder for tags
       publicId = `${postId}`;  // e.g., tags/tagId
-    } else {
+    } else if (imageType === "categories") {
+      folderName = `categories`;
+      publicId = `${postId}`;
+    }else {
       throw new Error("Invalid image type or missing parameters for image upload.");
     }
 
