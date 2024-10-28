@@ -35,3 +35,47 @@ export const search = expressAsyncHandler(async (req,res)=>{
 
     res.status(200).json(results);
 });
+
+// @desc Get posts by category and/or tag with pagination
+// @route GET /api/search/filter
+// @access public
+export const filterPosts = expressAsyncHandler(async (req, res) => {
+    const { categories, tags, page = 1, limit = 10 } = req.query; // Default page to 1 and limit to 10
+  
+    // Convert page and limit to integers
+    const pageNumber = parseInt(page, 10);
+    const limitNumber = parseInt(limit, 10);
+  
+    // Build the query for filtering posts
+    const query = {};
+  
+    // Handle multiple categories
+    if (categories) {
+        query.category = { $in: categories.split(',').map(cat => cat.trim()) }; // Trim whitespace
+    }
+  
+    // Handle multiple tags
+    if (tags) {
+        query.tags = { $in: tags.split(',').map(tag => tag.trim()) }; // Trim whitespace
+    }
+  
+    // Fetch posts with pagination
+    const posts = await Post.find(query)
+        .populate('owner_id', 'username name badge profile')
+        .skip((pageNumber - 1) * limitNumber)
+        .limit(limitNumber);
+  
+    // Get the total number of posts for the current filter
+    const totalPosts = await Post.countDocuments(query);
+  
+    // Calculate the total pages
+    const totalPages = Math.ceil(totalPosts / limitNumber);
+  
+    // Return the results
+    res.status(200).json({
+        posts,
+        currentPage: pageNumber,
+        totalPages,
+        totalPosts,
+    });
+  });
