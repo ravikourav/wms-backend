@@ -1,14 +1,14 @@
-import multer from "multer";
-const storagePath = process.env.STORAGE_PATH;
+import multer from 'multer';
 
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-      cb(null, storagePath)
+      const destinationPath = process.env.NODE_ENV === 'production' ? '/tmp' : './tmp';
+      cb(null, destinationPath);
     },
     filename: function (req, file, cb) {
       const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-      cb(null, uniqueSuffix + '-' + file.originalname); 
+      cb(null, uniqueSuffix + '-' + file.originalname);
     }
-  })
-  
-export const upload = multer({storage})
+});
+
+export const upload = multer({ storage });
