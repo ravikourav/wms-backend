@@ -15,7 +15,7 @@ export const getNotifications = expressAsyncHandler(async (req, res) => {
             },
             {
                 path: 'sender', // Assuming you have a user field in the notification schema
-                select: 'profile username badge', // populate the user with their profile picture and username
+                select: 'profile username name badge', // populate the user with their profile picture and username
             },
         ],
     });

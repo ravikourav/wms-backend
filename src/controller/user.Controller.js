@@ -50,7 +50,6 @@ export const registerUser = expressAsyncHandler(async (req, res) => {
 
     // Create new user
     const newUser = new User({
-        
         name,
         username,
         email,
