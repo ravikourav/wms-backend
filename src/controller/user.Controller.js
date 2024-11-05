@@ -29,21 +29,6 @@ export const registerUser = expressAsyncHandler(async (req, res) => {
         throw new Error('User already exists');
     }
 
-    let profileUrl = '';
-    let coverImgUrl = '';
-
-    const profileLocalPath = req.files?.profile?.[0]?.path;
-    const coverImgLocalPath = req.files?.coverImg?.[0]?.path;
-
-    if (profileLocalPath) {
-        const profile = await uploadOnCloudinary(req.files.coverImg[0].path , user.username , 'profile');
-        profileUrl = profile.url;
-    }
-
-    if (coverImgLocalPath) {
-        const coverImg = await uploadOnCloudinary(req.files.coverImg[0].path , user.username , 'cover');
-        coverImgUrl = coverImg.url;
-    }
 
     //Hash Password 
     const hashedPassword = await bcrypt.hash(password, 8);
@@ -73,6 +58,7 @@ export const registerUser = expressAsyncHandler(async (req, res) => {
             name: createdUser.name,
             username: createdUser.username,
             email: createdUser.email,
+            role : createdUser.role
         }
     },process.env.ACCESS_TOKEN_SECRET,{expiresIn:'7d'});
 
@@ -115,7 +101,7 @@ export const loginUser = expressAsyncHandler(async (req, res) => {
 //@route POST/api/user/current
 //@access private
 export const currentUser = expressAsyncHandler(async (req, res) => {
-    const { id } = req.params;
+    const { id } = req.user.id;
     const user = await User.findOne({_id: id});
     if (!user) {
         res.status(404);

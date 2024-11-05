@@ -1,5 +1,6 @@
 import expressAsyncHandler from 'express-async-handler';
 import { Tag } from '../models/tagModel.js';
+import { deleteImageFromCloudinary } from '../utils/Cloudinary.js';
 import uploadOnCloudinary from '../utils/Cloudinary.js';
 
 // @desc Get all tags
@@ -10,12 +11,12 @@ export const getTags = expressAsyncHandler(async (req, res) => {
     res.status(200).json(tags);
 });
 
-// @desc Get all tags
-// @route GET /api/tag/name
+// @desc Get all tag names
+// @route GET /api/tag/names
 // @access Public
 export const getTagsName = expressAsyncHandler(async (req, res) => {
-    const tags = await Tag.find({}, 'tag');
-    const tagNames = tags.map(tag => tag.tag);
+    const tags = await Tag.find({}, 'name'); // Query only 'name' field
+    const tagNames = tags.map(tag => tag.name);
     res.status(200).json({ names: tagNames });
 });
 
@@ -31,8 +32,8 @@ export const getPostsByTag = expressAsyncHandler(async (req, res) => {
         throw new Error('Tag not found');
     }
 
-    // Fetch posts that match the tag
-    const posts = await Post.find({ tags: tag.tag }).populate({
+    // Fetch posts that match the tag name (instead of tag)
+    const posts = await Post.find({ tags: tag.name }).populate({
         path: 'owner_id',
         select: 'username name profile badge'
     });
@@ -49,10 +50,10 @@ export const getPostsByTag = expressAsyncHandler(async (req, res) => {
 // @route POST /api/tag/create
 // @access Private Admin
 export const createTag = expressAsyncHandler(async (req, res) => {
-    const { tag, tagLine } = req.body;
-    const existingTag = await Tag.findOne({ tag });
+    const { name, description } = req.body;
+    const existingTag = await Tag.findOne({ name });
 
-    const backgroundImagePath = req.file?.path; // Using optional chaining
+    const backgroundImagePath = req.file?.path;
 
     if (!backgroundImagePath) {
         res.status(400);
@@ -60,17 +61,18 @@ export const createTag = expressAsyncHandler(async (req, res) => {
     }
 
     // Upload tag image to Cloudinary
-    const backgroundImageCloudinary = await uploadOnCloudinary(backgroundImagePath, null, 'tag', tag);
+    const backgroundImageCloudinary = await uploadOnCloudinary(backgroundImagePath, null, 'tag', name);
 
     if (existingTag) {
         res.status(400);
         throw new Error('Tag already exists');
     }
 
-    const newTag = new Tag({ 
-        tag,
-        tagLine,
-        backgroundImage: backgroundImageCloudinary.url
+    const newTag = new Tag({
+        name,
+        description,
+        backgroundImage: backgroundImageCloudinary.url,
+        postCount: 0  // Initialize postCount to 0
     });
 
     await newTag.save();
@@ -81,7 +83,7 @@ export const createTag = expressAsyncHandler(async (req, res) => {
 // @route PUT /api/tag/:id
 // @access Private Admin
 export const updateTag = expressAsyncHandler(async (req, res) => {
-    const { tag, tagLine } = req.body;
+    const { name, description } = req.body;
 
     // Find the tag by ID
     const tagToUpdate = await Tag.findById(req.params.id);
@@ -92,15 +94,15 @@ export const updateTag = expressAsyncHandler(async (req, res) => {
     }
 
     // Update the tag fields
-    tagToUpdate.tag = tag || tagToUpdate.tag;
-    tagToUpdate.tagLine = tagLine || tagToUpdate.tagLine;
-    
+    tagToUpdate.name = name || tagToUpdate.name;
+    tagToUpdate.description = description || tagToUpdate.description;
+
     // Check if there's an image to upload
     const backgroundImagePath = req.file?.path;
     if (backgroundImagePath) {
         // Upload the new image to Cloudinary
-        const backgroundImageCloudinary = await uploadOnCloudinary(backgroundImagePath, null, 'tag', tag);
-        
+        const backgroundImageCloudinary = await uploadOnCloudinary(backgroundImagePath, null, 'tag', name);
+
         // Update the image URL in the tag
         tagToUpdate.backgroundImage = backgroundImageCloudinary.url;
     }
@@ -115,10 +117,17 @@ export const updateTag = expressAsyncHandler(async (req, res) => {
 // @route DELETE /api/tag/:id
 // @access Private Admin
 export const deleteTag = expressAsyncHandler(async (req, res) => {
-    const deletedTag = await Tag.findByIdAndDelete(req.params.id);
-    if (!deletedTag) {
+    const tagToDelete = await Tag.findById(req.params.id);
+    if (!tagToDelete) {
         res.status(404);
         throw new Error('Tag not found');
     }
+
+    // Delete the image from Cloudinary
+    await deleteImageFromCloudinary(tagToDelete.backgroundImage);
+
+    // Delete the tag
+    await Tag.findByIdAndDelete(req.params.id);
+
     res.status(200).json({ message: 'Tag deleted successfully' });
 });

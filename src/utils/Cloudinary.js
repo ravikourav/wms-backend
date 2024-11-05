@@ -78,6 +78,28 @@ const uploadOnCloudinary = async (tempFilePath, username = null, imageType, post
   }
 };
 
+export const deleteImageFromCloudinary = async (imageUrl) => {
+  
+  cloudinary.config({
+    cloud_name: process.env.CLOUD_NAME,
+    api_key: process.env.API_KEY,
+    api_secret: process.env.API_SECRET,
+  });
+
+  try {
+    // Extract public ID from the image URL
+    const urlParts = imageUrl.split('/');
+    const imageFileName = urlParts.pop(); // Get the last part of the URL
+    const publicId = imageFileName.split('.')[0]; // Remove the file extension
+
+    // Delete the image using the public ID
+    await cloudinary.uploader.destroy(publicId);
+    console.log(`Deleted image with public ID: ${publicId}`);
+  } catch (error) {
+    console.error('Error deleting image from Cloudinary:', error);
+    throw error; // Rethrow if you want to handle it elsewhere
+  }
+};
 // Example Usage for Profile Image
 //await uploadOnCloudinary(tempFilePath, 'john_doe', 'profile');
 

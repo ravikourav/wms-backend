@@ -13,6 +13,9 @@ const categorySchema = new mongoose.Schema({
     backgroundImage: { 
         type: String,
         required: true,
+    },
+    postCount:{
+        type: Number,
     }
 }, { timestamps: true });
 

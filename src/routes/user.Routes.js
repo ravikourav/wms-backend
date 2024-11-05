@@ -1,5 +1,5 @@
 import express from 'express';
-import { registerUser, loginUser, currentUser, getUser, followUser, unFollowUser, getfollowers , updateUser} from '../controller/user.Controller.js';
+import { registerUser, loginUser, currentUser, getUser, followUser, unFollowUser, getfollowers, updateUser} from '../controller/user.Controller.js';
 import validateToken from '../middleware/tokenValidationHandler.js';
 import { upload } from '../middleware/multer.js';
 
@@ -22,5 +22,6 @@ userRouter.put('/:id/update', upload.fields([
 userRouter.get('/current', currentUser);
 userRouter.post('/:userId/follow', followUser);
 userRouter.post('/:userId/unfollow' , unFollowUser);
+
 
 export default userRouter;

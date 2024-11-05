@@ -3,6 +3,7 @@ import { User } from "../models/userModel.js";
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { BadgeAssignmentLog } from '../models/badgeAssignmentLogModel.js';
+import { deleteImageFromCloudinary } from "../utils/Cloudinary.js";
 
 // @desc Assign a badge to a user
 // @route PUT /api/admin/assignBadge/:userId
@@ -120,3 +121,41 @@ export const getAllUsers = expressAsyncHandler(async (req, res) => {
     totalUsers: count,
   });
 }); 
+
+// @desc Delete a user
+// @route DELETE /api/admin/:userId/delete
+// @access Admin
+export const deleteUser = expressAsyncHandler(async (req, res) => {
+    const { userId } = req.params;
+    const adminId = req.user.id;
+
+    // Find the user by ID
+    const user = await User.findById(userId);
+
+    if (!user) {
+        res.status(404);
+        throw new Error('User not found!');
+    }
+
+    // Check if the user is trying to delete themselves
+    if (userId === adminId) {
+        res.status(400);
+        throw new Error('Admins cannot delete their own accounts!');
+    }
+
+    // Delete profile and cover images from Cloudinary
+    if (user.profile) {
+        await deleteImageFromCloudinary(user.profile);
+    }
+
+    if (user.coverImg) {
+        await deleteImageFromCloudinary(user.coverImg);
+    }
+
+    // Delete the user
+    await User.findByIdAndDelete(userId);
+
+    res.status(200).json({
+        message: `User ${user.username} deleted successfully!`,
+    });
+});

@@ -1,18 +1,21 @@
 import mongoose from 'mongoose';
 
 const tagSchema = new mongoose.Schema({
-    tag: {
+    name: {
         type: String,
         required: true,
         unique: true
     },
-    tagLine: {
+    description: {
         type: String,
         required: true,
     },
     backgroundImage: { 
         type: String,
         required: true,
+    },
+    postCount:{
+        type: Number,
     }
 }, { timestamps: true });
 
