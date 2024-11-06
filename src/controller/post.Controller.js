@@ -32,15 +32,23 @@ export const getRandomPosts = expressAsyncHandler(async (req, res) => {
   // Get the total number of posts
   const totalPosts = await Post.countDocuments();
 
-  // Fetch random posts
-  const randomPosts = await Post.aggregate([
-    { $sample: { size: totalPosts } }, // Randomly sample posts
-    { $skip: skip }, // Apply pagination
-    { $limit: limit }, // Apply limit
-  ]).populate({
-    path: 'owner_id',
-    select: 'username name profile badge',
-  });
+  // Fetch random posts (aggregate without populate)
+  const randomPostsIds = await Post.aggregate([
+    { $sample: { size: totalPosts } },  // Randomly sample posts
+    { $skip: skip },  // Pagination
+    { $limit: limit },  // Limit to requested number of posts
+    { $project: { _id: 1 } }  // Only return post IDs
+  ]);
+
+  // Extract post IDs from the result
+  const postIds = randomPostsIds.map(post => post._id);
+
+  // Fetch posts and populate the owner_id field
+  const randomPosts = await Post.find({ _id: { $in: postIds } })
+    .populate({
+      path: 'owner_id',
+      select: 'username name profile badge',
+    });
 
   // Calculate total number of pages
   const totalPages = Math.ceil(totalPosts / limit);
