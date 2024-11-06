@@ -92,7 +92,7 @@ export const adminLogin = expressAsyncHandler(async (req, res) => {
 export const getAllUsers = expressAsyncHandler(async (req, res) => {
     // Extract parameters for pagination, filtering, and sorting
   const page = Number(req.query.pageNumber) || 1;
-  const pageSize = Number(req.query.pageSize) || 10; // Default 10 users per page
+  const pageSize = Number(req.query.pageSize) || 40; // Default 10 users per page
   const search = req.query.search || ''; // Search by username or email
   const sortBy = req.query.sortBy || 'createdAt'; // Sort by default createdAt
   const sortOrder = req.query.sortOrder || 'desc'; // Default sort order is descending

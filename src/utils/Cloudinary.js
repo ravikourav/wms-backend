@@ -79,7 +79,6 @@ const uploadOnCloudinary = async (tempFilePath, username = null, imageType, post
 };
 
 export const deleteImageFromCloudinary = async (imageUrl) => {
-  
   cloudinary.config({
     cloud_name: process.env.CLOUD_NAME,
     api_key: process.env.API_KEY,
@@ -87,14 +86,22 @@ export const deleteImageFromCloudinary = async (imageUrl) => {
   });
 
   try {
-    // Extract public ID from the image URL
-    const urlParts = imageUrl.split('/');
-    const imageFileName = urlParts.pop(); // Get the last part of the URL
-    const publicId = imageFileName.split('.')[0]; // Remove the file extension
+    // Step 1: Split URL into parts
+    const urlParts = imageUrl.split('/'); // Split by "/"
+    
+    // Step 2: Remove the file extension from the image filename
+    const imageFileName = urlParts.pop(); // Get the last part ("cover.jpg")
+    const publicId = imageFileName.split('.')[0]; // Remove the file extension -> "cover"
 
-    // Delete the image using the public ID
-    await cloudinary.uploader.destroy(publicId);
-    console.log(`Deleted image with public ID: ${publicId}`);
+    // Step 3: Extract the folder structure (if any)
+    const folderPath = urlParts.slice(7).join('/'); // This will give the folder path (after "/upload/")
+
+    // Step 4: Combine folder path and filename to create the full public ID
+    const finalPublicId = folderPath ? `${folderPath}/${publicId}` : publicId;
+
+    // Step 5: Delete the image using the full public ID (folder + filename)
+    await cloudinary.uploader.destroy(finalPublicId);
+    console.log(`Deleted image with public ID: ${finalPublicId}`);
   } catch (error) {
     console.error('Error deleting image from Cloudinary:', error);
     throw error; // Rethrow if you want to handle it elsewhere

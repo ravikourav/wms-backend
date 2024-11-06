@@ -18,6 +18,42 @@ export const getAllPosts = expressAsyncHandler(async (req, res) => {
   res.json(posts);
 });
 
+// @desc Get random posts with pagination
+// @route GET /api/post/random?page=1&limit=10
+// @access Public
+export const getRandomPosts = expressAsyncHandler(async (req, res) => {
+  // Get page and limit from query parameters, default to 1 page and 10 posts per page
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+
+  // Calculate the number of posts to skip for pagination
+  const skip = (page - 1) * limit;
+
+  // Get the total number of posts
+  const totalPosts = await Post.countDocuments();
+
+  // Fetch random posts
+  const randomPosts = await Post.aggregate([
+    { $sample: { size: totalPosts } }, // Randomly sample posts
+    { $skip: skip }, // Apply pagination
+    { $limit: limit }, // Apply limit
+  ]).populate({
+    path: 'owner_id',
+    select: 'username name profile badge',
+  });
+
+  // Calculate total number of pages
+  const totalPages = Math.ceil(totalPosts / limit);
+
+  // Send the response with posts and pagination info
+  res.json({
+    posts: randomPosts,
+    page,
+    totalPages,
+    totalPosts,
+  });
+});
+
 // @desc Get posts by a specific user
 // @route GET /api/post/user/:userId
 // @access Public
@@ -65,7 +101,7 @@ export const createPost = expressAsyncHandler(async (req, res) => {
   const savedPost = await newPost.save();  // Save the post and get the post ID
 
   // Step 2: Increment postCount in the corresponding category
-  const categoryToUpdate = await Category.findById(category);
+  const categoryToUpdate = await Category.findOne({ name: category });
   if (categoryToUpdate) {
     categoryToUpdate.postCount = (categoryToUpdate.postCount || 0) + 1;
     await categoryToUpdate.save();

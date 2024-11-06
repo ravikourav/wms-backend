@@ -53,6 +53,11 @@ export const createTag = expressAsyncHandler(async (req, res) => {
     const { name, description } = req.body;
     const existingTag = await Tag.findOne({ name });
 
+    if (existingTag) {
+        res.status(400);
+        throw new Error('Tag already exists');
+    }
+
     const backgroundImagePath = req.file?.path;
 
     if (!backgroundImagePath) {
@@ -62,11 +67,6 @@ export const createTag = expressAsyncHandler(async (req, res) => {
 
     // Upload tag image to Cloudinary
     const backgroundImageCloudinary = await uploadOnCloudinary(backgroundImagePath, null, 'tag', name);
-
-    if (existingTag) {
-        res.status(400);
-        throw new Error('Tag already exists');
-    }
 
     const newTag = new Tag({
         name,
