@@ -2,11 +2,13 @@ import express from 'express';
 import { createTag, deleteTag, getPostsByTag, getTags, getTagsName, updateTag } from '../controller/tag.Controler.js';
 import validateToken from '../middleware/tokenValidationHandler.js';
 import { upload } from '../middleware/multer.js';
+import { getRandomPosts } from '../controller/post.Controller.js';
 
 const router = express.Router();
 
 //Public Routes
 router.get('/all' , getTags);
+router.get('/random' , getRandomPosts);
 router.get('/names' , getTagsName);
 router.get('/:id/posts' , getPostsByTag);
 
