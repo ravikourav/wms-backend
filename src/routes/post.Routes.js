@@ -1,5 +1,5 @@
 import express from 'express';
-import { getAllPosts, getUserPosts, createPost, getPost, updatePost, deletePost, likePost, unlikePost, addComment, likeComment, addReply, likeReply, unlikeComment, unlikeReply, deleteComment, deleteReply, savePost, unsavePost, getComments} from '../controller/post.Controller.js';
+import { getAllPosts, getUserPosts, createPost, getPost, updatePost, deletePost, likePost, unlikePost, addComment, likeComment, addReply, likeReply, unlikeComment, unlikeReply, deleteComment, deleteReply, savePost, unsavePost, getComments, getRandomPosts} from '../controller/post.Controller.js';
 import validateToken from '../middleware/tokenValidationHandler.js';
 import { upload } from '../middleware/multer.js';
 
@@ -7,6 +7,7 @@ const router = express.Router();
 
 // Fetch all posts
 router.get('/all', getAllPosts);
+router.get('/random',getRandomPosts);
 
 // Fetch posts by a specific user
 router.get('/user/:userId', getUserPosts);
