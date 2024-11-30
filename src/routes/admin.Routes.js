@@ -1,5 +1,5 @@
 import express from 'express';
-import { adminLogin, getAllUsers, assignBadge, deleteUser } from '../controller/adminController.js';
+import { adminLogin, getAllUsers, assignBadge, deleteUser } from '../controller/admin.Controller.js';
 import validateToken from '../middleware/tokenValidationHandler.js';
 
 const router = express.Router();

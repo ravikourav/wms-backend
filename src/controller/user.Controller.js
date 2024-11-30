@@ -262,12 +262,12 @@ export const updateUser = expressAsyncHandler(async (req, res) => {
 
     if (req.files?.profile?.[0]?.path) {
         const profile = await uploadOnCloudinary(req.files.profile[0].path , user.username , 'profile');
-        profileUrl = profile.url;
+        profileUrl = profile.secure_url;
     }
 
      if (req.files?.coverImg?.[0]?.path) {
         const coverImg = await uploadOnCloudinary(req.files.coverImg[0].path , user.username , 'cover');
-        coverImgUrl = coverImg.url;
+        coverImgUrl = coverImg.secure_url;
     }
 
     if (name && name !== user.name) {

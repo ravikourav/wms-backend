@@ -71,7 +71,7 @@ export const createTag = expressAsyncHandler(async (req, res) => {
     const newTag = new Tag({
         name,
         description,
-        backgroundImage: backgroundImageCloudinary.url,
+        backgroundImage: backgroundImageCloudinary.secure_url,
         postCount: 0  // Initialize postCount to 0
     });
 
@@ -104,7 +104,7 @@ export const updateTag = expressAsyncHandler(async (req, res) => {
         const backgroundImageCloudinary = await uploadOnCloudinary(backgroundImagePath, null, 'tag', name);
 
         // Update the image URL in the tag
-        tagToUpdate.backgroundImage = backgroundImageCloudinary.url;
+        tagToUpdate.backgroundImage = backgroundImageCloudinary.secure_url;
     }
 
     // Save the updated tag

@@ -65,7 +65,7 @@ export const createCategory = expressAsyncHandler(async (req, res) => {
     const newCategory = new Category({
         name,
         description,
-        backgroundImage: imageCloudinary.url, // Using backgroundImage to match your schema
+        backgroundImage: imageCloudinary.secure_url, // Using backgroundImage to match your schema
     });
 
     await newCategory.save();
@@ -91,7 +91,7 @@ export const updateCategory = expressAsyncHandler(async (req, res) => {
     const imagePath = req.file?.path; // Using optional chaining
     if (imagePath) {
         const imageCloudinary = await uploadOnCloudinary(imagePath, null, 'categories', name);
-        categoryToUpdate.backgroundImage = imageCloudinary.url; // Using backgroundImage
+        categoryToUpdate.backgroundImage = imageCloudinary.secure_url; // Using backgroundImage
     }
 
     const updatedCategory = await categoryToUpdate.save();

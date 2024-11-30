@@ -131,7 +131,7 @@ export const createPost = expressAsyncHandler(async (req, res) => {
   const backgroundImageCloudinary = await uploadOnCloudinary(backgroundImagePath, user.username, 'post', savedPost._id);
 
   // Step 4: Update the post with the Cloudinary image URL and dimensions
-  savedPost.backgroundImage = backgroundImageCloudinary.url;
+  savedPost.backgroundImage = backgroundImageCloudinary.secure_url;
   savedPost.width = backgroundImageCloudinary.width;
   savedPost.height = backgroundImageCloudinary.height;
 
@@ -230,7 +230,7 @@ export const updatePost = expressAsyncHandler(async (req, res) => {
 
       // Upload new background image to Cloudinary
       const backgroundImageCloudinary = await uploadOnCloudinary(backgroundImagePath, req.user.username, 'post', post._id);
-      post.backgroundImage = backgroundImageCloudinary.url;
+      post.backgroundImage = backgroundImageCloudinary.secure_url;
       post.width = backgroundImageCloudinary.width;
       post.height = backgroundImageCloudinary.height;
   }

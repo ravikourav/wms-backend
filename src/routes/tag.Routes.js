@@ -1,5 +1,5 @@
 import express from 'express';
-import { createTag, deleteTag, getPostsByTag, getTags, getTagsName, updateTag } from '../controller/tag.Controler.js';
+import { createTag, deleteTag, getPostsByTag, getTags, getTagsName, updateTag } from '../controller/tag.Controller.js';
 import validateToken from '../middleware/tokenValidationHandler.js';
 import { upload } from '../middleware/multer.js';
 
