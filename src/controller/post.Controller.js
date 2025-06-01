@@ -19,42 +19,25 @@ export const getAllPosts = expressAsyncHandler(async (req, res) => {
 });
 
 // @desc Get random posts with pagination
-// @route GET /api/post/random?page=1&limit=10
+// @route GET /api/post/random?limit=10
 // @access Public
 export const getRandomPosts = expressAsyncHandler(async (req, res) => {
-  // Get page and limit from query parameters, default to 1 page and 10 posts per page
-  const page = parseInt(req.query.page) || 1;
+  // Get page and limit from query parameters, default 10 posts
   const limit = parseInt(req.query.limit) || 10;
-
-  // Calculate the number of posts to skip for pagination
-  const skip = (page - 1) * limit;
-
-  // Get the total number of posts
-  const totalPosts = await Post.countDocuments();
 
   // Fetch random posts using aggregation to sample
   const randomPosts = await Post.aggregate([
-    { $sample: { size: totalPosts } }, // Randomly sample posts
-    { $skip: skip },  // Apply pagination
-    { $limit: limit },  // Limit the number of posts returned
+    { $sample: { size: limit } } // Randomly sample posts
   ]).exec();
 
   // Populate owner information
-  const populatedPosts = await Post.populate(randomPosts, {
+  const Posts = await Post.populate(randomPosts, {
     path: 'owner_id',
     select: 'username name profile badge',
   });
 
-  // Calculate total number of pages
-  const totalPages = Math.ceil(totalPosts / limit);
-
-  // Send the response with posts and pagination info
-  res.json({
-    posts: populatedPosts,
-    page,
-    totalPages,
-    totalPosts,
-  });
+  // Send the response posts
+  res.json(Posts);
 });
 
 
@@ -147,9 +130,6 @@ export const createPost = expressAsyncHandler(async (req, res) => {
 //@desc Update post by ID
 //@route PUT /api/post/:id
 //@access private
-// @desc Update post by ID
-// @route PUT /api/post/:id
-// @access private
 export const updatePost = expressAsyncHandler(async (req, res) => {
   const { id } = req.params;
   const updateData = req.body; // Contains updated data for the post

@@ -1,5 +1,6 @@
 import expressAsyncHandler from 'express-async-handler';
 import { Tag } from '../models/tagModel.js';
+import { Post } from '../models/postModel.js';
 import { deleteImageFromCloudinary } from '../utils/Cloudinary.js';
 import uploadOnCloudinary from '../utils/Cloudinary.js';
 
