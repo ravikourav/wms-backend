@@ -16,7 +16,8 @@ export const search = expressAsyncHandler(async (req,res)=>{
     // Find users by username (case-insensitive, partial matching)
     const users = await User.find({
         username: { $regex: query, $options: 'i' }
-    });
+    }).select('username name badge profile');
+    // Note: You can also include other fields like email, etc. if needed
 
     // Find posts by content or title (full-text search)
     const posts = await Post.find({
