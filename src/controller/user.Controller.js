@@ -138,11 +138,48 @@ export const getUser = expressAsyncHandler(async(req, res)=>{
         res.status(404);
         throw new Error('User not found');
     }
-
-    user.password = undefined;
-    user.notifications = undefined;
-    res.status(200).json(user);
+    const userObj = user.toObject();
+    delete userObj.password;
+    delete userObj.notifications;
+    res.status(200).json(userObj);
 });
+
+//@desc Get Populated Followers
+//@route GET /api/user/:userId/followers
+//@access Public
+export const getPopulatedFollowers = expressAsyncHandler(async (req, res) => {
+    const { userId } = req.params;
+    const user = await User.findById(userId).populate({
+        path: 'followers',
+        select: 'username name profile badge'
+    });
+
+    if (!user) {
+        res.status(404);
+        throw new Error("User not found");
+    }
+
+    res.status(200).json(user.followers);
+});
+
+//@desc Get Populated Following
+//@route GET /api/user/:userId/following
+//@access Public
+export const getPopulatedFollowing = expressAsyncHandler(async (req, res) => {
+    const { userId } = req.params;
+    const user = await User.findById(userId).populate({
+        path: 'following',
+        select: 'username name profile badge'
+    });
+
+    if (!user) {
+        res.status(404);
+        throw new Error("User not found");
+    }
+
+    res.status(200).json(user.following);
+});
+
 
 //@desc Follow User
 //@route POST/api/user/:id/getfollowers

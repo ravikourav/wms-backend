@@ -1,5 +1,5 @@
 import express from 'express';
-import { registerUser, loginUser, currentUser, getUser, followUser, unFollowUser, getfollowers, updateUser} from '../controller/user.Controller.js';
+import { registerUser, loginUser, currentUser, getUser, getPopulatedFollowers, getPopulatedFollowing, followUser, unFollowUser, getfollowers, updateUser} from '../controller/user.Controller.js';
 import validateToken from '../middleware/tokenValidationHandler.js';
 import { upload } from '../middleware/multer.js';
 
@@ -11,6 +11,8 @@ userRouter.post('/register', upload.fields([
 ]), registerUser);
 userRouter.post('/login', loginUser);
 userRouter.get('/:username' , getUser);
+userRouter.get('/:userId/following', getPopulatedFollowing);
+userRouter.get('/:userId/followers', getPopulatedFollowers);
 userRouter.get('/:userId/getfollowers' , getfollowers);
 userRouter.use(validateToken(['user' , 'admin']));
 
