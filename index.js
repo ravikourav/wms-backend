@@ -10,7 +10,7 @@ import tagRoutes from './src/routes/tag.Routes.js';
 import categoryRoutes from './src/routes/category.Routes.js';
 import notificationRoutes from './src/routes/notification.Routes.js';
 import searchRoutes  from './src/routes/search.Routes.js';
-
+import reportRoutes from './src/routes/report.Routes.js';
 import adminRoutes from './src/routes/admin.Routes.js';
 
 dotenv.config();
@@ -43,6 +43,7 @@ app.use('/api/tag' , tagRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/category', categoryRoutes);
 app.use('/api/search', searchRoutes);
+app.use('/api/report', reportRoutes);
 
 app.use('/api/admin' , adminRoutes);
 
