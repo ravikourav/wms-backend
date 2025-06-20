@@ -62,9 +62,9 @@ export const createPost = expressAsyncHandler(async (req, res) => {
     throw new Error("User not found");
   }
 
-  if (!title || !content || !author || !category || !tags || !contentColor || !authorColor || !tintColor) {
+  if (!content || !author || !category || !tags || !contentColor || !authorColor || !tintColor) {
     res.status(400);
-    throw new Error("Post validation failed");
+    throw new Error("Post validation failed: Missing required fields");
   }
 
   const tagsArray = tags.split(',').map(tag => tag.trim());
@@ -506,7 +506,7 @@ export const addComment = expressAsyncHandler(async (req, res) => {
   const commentFromDb = post.comments[post.comments.length - 1];
   await Post.populate(commentFromDb, {
     path: 'comment_author',
-    select: 'username profile'
+    select: 'username profile badge name'
   });
   res.status(201).json({ comment: commentFromDb });
 });
@@ -694,7 +694,7 @@ export const addReply = expressAsyncHandler(async (req, res) => {
   const replyFromDb = replyTo.replies[replyTo.replies.length - 1];
   await Post.populate(replyFromDb, {
     path: 'reply_author',
-    select: 'username profile'
+    select: 'username profile badge name'
   });
   res.status(201).json({ reply: replyFromDb });
 });
