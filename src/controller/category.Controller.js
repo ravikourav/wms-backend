@@ -20,24 +20,39 @@ export const getCategoryNames = expressAsyncHandler(async (req, res) => {
     res.status(200).json({ names: categoryNames });
 });
 
-// @desc Get all posts by category
-// @route GET /api/category/:id/posts
+// @desc Get all posts by category with pagination
+// @route GET /api/category/:id/posts?page=1&limit=10
 // @access Public
 export const getPostsByCategory = expressAsyncHandler(async (req, res) => {
     const categoryId = req.params.id;
-    
-    // Fetch posts that match the category ID
-    const posts = await Post.find({ category: categoryId }).populate({
-        path: 'owner_id',
-        select: 'username name profile badge'
-    });
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
 
-    if (!posts.length) {
+    const category = await Category.findById(categoryId);
+    if (!category) {
         res.status(404);
-        throw new Error('No posts found for this category');
+        throw new Error('Category not found');
     }
 
-    res.json(posts);
+    // Total count for pagination
+    const totalPosts = await Post.countDocuments({ category: category.name });
+
+    const posts = await Post.find({ category: category.name })
+        .sort({ createdAt: -1 }) // Optional: newest first
+        .skip(skip)
+        .limit(limit)
+        .populate({
+            path: 'owner_id',
+            select: 'username name profile badge'
+        });
+
+    res.json({
+        posts,
+        currentPage: page,
+        totalPages: Math.ceil(totalPosts / limit),
+        totalPosts
+    });
 });
 
 // @desc Create a new category

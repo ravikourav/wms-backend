@@ -21,30 +21,39 @@ export const getTagsName = expressAsyncHandler(async (req, res) => {
     res.status(200).json({ names: tagNames });
 });
 
-// @desc Get all posts by tag
-// @route GET /api/tag/:id/posts
+
+// @desc Get all posts by tag with pagination
+// @route GET /api/tag/:id/posts?page=1&limit=10
 // @access Public
 export const getPostsByTag = expressAsyncHandler(async (req, res) => {
-    const tagId = req.params.id;
-    const tag = await Tag.findById(tagId);
+  const tagId = req.params.id;
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const skip = (page - 1) * limit;
 
-    if (!tag) {
-        res.status(404);
-        throw new Error('Tag not found');
-    }
+  const tag = await Tag.findById(tagId);
+  if (!tag) {
+    res.status(404);
+    throw new Error('Tag not found');
+  }
 
-    // Fetch posts that match the tag name (instead of tag)
-    const posts = await Post.find({ tags: tag.name }).populate({
-        path: 'owner_id',
-        select: 'username name profile badge'
+  const totalPosts = await Post.countDocuments({ tags: tag.name });
+
+  const posts = await Post.find({ tags: tag.name })
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(limit)
+    .populate({
+      path: 'owner_id',
+      select: 'username name profile badge'
     });
 
-    if (!posts.length) {
-        res.status(404);
-        throw new Error('No posts found for this tag');
-    }
-
-    res.json(posts);
+  res.json({
+    posts,
+    currentPage: page,
+    totalPages: Math.ceil(totalPosts / limit),
+    totalPosts
+  });
 });
 
 // @desc Create a new tag
