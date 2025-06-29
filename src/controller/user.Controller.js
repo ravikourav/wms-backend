@@ -10,6 +10,9 @@ import uploadOnCloudinary from "../utils/Cloudinary.js";
 export const registerUser = expressAsyncHandler(async (req, res) => {
     const {name, username, email, password , role } = req.body;
 
+    const normalizedUsername = username.toLowerCase();
+    const normalizedEmail = email.toLowerCase();
+
     if(!name || !username || !email || !password){
         res.status(400);
         throw new Error('All field are mandatory!');
@@ -21,7 +24,7 @@ export const registerUser = expressAsyncHandler(async (req, res) => {
     }
 
     const userExists = await User.findOne({
-        $or: [{ email }, { username }]
+        $or: [{ email: normalizedEmail }, { username: normalizedUsername }]
     });
 
     if (userExists) {
@@ -29,15 +32,14 @@ export const registerUser = expressAsyncHandler(async (req, res) => {
         throw new Error('User already exists');
     }
 
-
     //Hash Password 
     const hashedPassword = await bcrypt.hash(password, 8);
 
     // Create new user
     const newUser = new User({
         name,
-        username,
-        email,
+        username: normalizedUsername,
+        email: normalizedEmail,
         password: hashedPassword,
         profile: '',
         coverImg: '',
@@ -70,13 +72,15 @@ export const registerUser = expressAsyncHandler(async (req, res) => {
 //@access public
 export const loginUser = expressAsyncHandler(async (req, res) => {
     const { username , password } = req.body;
-
+    
     if(!username || !password){
         res.status(400);
         throw new Error('All field are mandatory!');
     }
+
+    const normalizedUsername = username.toLowerCase();
     
-    const user = await User.findOne({username});
+    const user = await User.findOne({normalizedUsername});
 
     if(user && (await bcrypt.compare(password, user.password))){
         const accessToken = jwt.sign(
