@@ -148,14 +148,14 @@ export const updatePost = expressAsyncHandler(async (req, res) => {
   // Step 2: Handle category change
   if (category && category !== post.category) {
       // Decrement postCount for the old category
-      const oldCategory = await Category.findById(post.category);
+      const oldCategory = await Category.findOne({ name: post.category });
       if (oldCategory && oldCategory.postCount > 0) {
           oldCategory.postCount -= 1;
           await oldCategory.save();
       }
 
       // Increment postCount for the new category
-      const newCategory = await Category.findById(category);
+      const newCategory = await Category.findOne({ name: category });
       if (newCategory) {
           newCategory.postCount = (newCategory.postCount || 0) + 1;
           await newCategory.save();
