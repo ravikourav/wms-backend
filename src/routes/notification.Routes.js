@@ -1,5 +1,5 @@
 import express from 'express';
-import { getNotifications, markAsRead } from '../controller/notification.Controller.js';
+import { getNotifications, markAllAsRead } from '../controller/notification.Controller.js';
 import validateToken from '../middleware/tokenValidationHandler.js';
 
 const router = express.Router();
@@ -11,6 +11,6 @@ router.use(validateToken(['user', 'admin']));
 router.get('/', getNotifications);
 
 // Mark a notification as read
-router.put('/:notificationId/read', markAsRead);
+router.put('/mark-all-read', markAllAsRead);
 
 export default router;

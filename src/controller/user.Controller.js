@@ -80,8 +80,8 @@ export const loginUser = expressAsyncHandler(async (req, res) => {
 
     const normalizedUsername = username.toLowerCase();
     
-    const user = await User.findOne({normalizedUsername});
-
+    const user = await User.findOne({ username: normalizedUsername })
+    
     if(user && (await bcrypt.compare(password, user.password))){
         const accessToken = jwt.sign(
             {

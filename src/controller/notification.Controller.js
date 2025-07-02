@@ -21,34 +21,34 @@ export const getNotifications = expressAsyncHandler(async (req, res) => {
     });
 
     if (!user) {
-        res.status(404);
-        throw new Error('User not found');
+      res.status(404);
+      throw new Error('User not found');
     }
     res.status(200).json(user.notifications);
 });
 
-// @desc Mark a notification as read
-// @route PUT /api/notifications/:notificationId/read
+// @desc Mark all notifications as read
+// @route PUT /api/notifications/mark-all-read
 // @access Private
-export const markAsRead = expressAsyncHandler(async (req, res) => {
-    const { notificationId } = req.params;
+export const markAllAsRead = expressAsyncHandler(async (req, res) => {
+  const user = await User.findById(req.user.id);
 
-    const user = await User.findById(req.user.id);
+  if (!user) {
+    res.status(404);
+    throw new Error('User not found');
+  }
 
-    if (!user) {
-        res.status(404);
-        throw new Error('User not found');
+  let updated = false;
+  user.notifications.forEach((notif) => {
+    if (!notif.read) {
+      notif.read = true;
+      updated = true;
     }
+  });
 
-    const notification = user.notifications.id(notificationId);
-    
-    if (!notification) {
-        res.status(404);
-        throw new Error('Notification not found');
-    }
-
-    notification.read = true;
+  if (updated) {
     await user.save();
+  }
 
-    res.status(200).json(user.notifications);
+  res.status(200).json({ message: 'All notifications marked as read', notifications: user.notifications });
 });
