@@ -18,18 +18,19 @@ const uploadOnCloudinary = async (tempFilePath, username = null, imageType, post
     if (imageType === "profile" || imageType === "cover") {
       folderName = `users/${username}`;  // Correct folder for the user
       publicId = `${imageType}`;  // e.g., users/username/profile or users/username/cover
-      transformation = { width: 512, height: 512, crop: "limit" };
+      transformation = { width: 512, height: 512, crop: "limit", quality: "auto", fetch_format: "auto" };
     } else if (imageType === "post" && postId) {
       folderName = `users/${username}`;  // Correct folder for the post
       publicId = `${postId}`;  // e.g., users/username/postId
+      transformation = { width: 1920, height: 1080, crop: "limit", quality: "auto", fetch_format: "auto" };
     } else if (imageType === "tag") {
       folderName = `tags`;  // Correct folder for tags
       publicId = `${postId}`;  // e.g., tags/tagId
-      transformation = { width: 512, height: 512, crop: "limit" };
+      transformation = { width: 512, height: 512, crop: "limit", quality: "auto", fetch_format: "auto" };
     } else if (imageType === "categories") {
       folderName = `categories`;
       publicId = `${postId}`;
-      transformation = { width: 512, height: 512, crop: "limit" };
+      transformation = { width: 512, height: 512, crop: "limit", quality: "auto", fetch_format: "auto"  };
     }else {
       throw new Error("Invalid image type or missing parameters for image upload.");
     }
@@ -43,8 +44,6 @@ const uploadOnCloudinary = async (tempFilePath, username = null, imageType, post
       overwrite: true,           // Overwrite to enable versioning
       unique_filename: false,    // Reuse the same public_id for versioning
       secure: true,              // Use HTTPS for the image URL
-      quality: "auto",           // Automatic smart compression
-      fetch_format: "auto",      // Automatic format selection
     });
 
     // Step 3: Delete the local file after uploading
