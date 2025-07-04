@@ -49,8 +49,6 @@ const uploadOnCloudinary = async (tempFilePath, username = null, imageType, post
       fs.unlink(tempFilePath, (err) => {
         if (err) {
           console.error("Error while deleting the file:", err);
-        } else {
-          console.log("File deleted successfully");
         }
       });
     } else {
@@ -66,8 +64,6 @@ const uploadOnCloudinary = async (tempFilePath, username = null, imageType, post
       fs.unlink(tempFilePath, (err) => {
         if (err) {
           console.error("Error while deleting the file:", err);
-        } else {
-          console.log("File deleted successfully");
         }
       });
     } else {

@@ -1,5 +1,6 @@
 import expressAsyncHandler from "express-async-handler";
 import { User } from "../models/userModel.js";
+import { Post } from "../models/postModel.js";
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import uploadOnCloudinary from "../utils/Cloudinary.js";
@@ -101,12 +102,13 @@ export const loginUser = expressAsyncHandler(async (req, res) => {
     }
 });
 
-//@desc current user
-//@route POST/api/user/current
-//@access private
-export const currentUser = expressAsyncHandler(async (req, res) => {
-    const { id } = req.user.id;
-    const user = await User.findOne({_id: id});
+//@desc get user by Id
+//@route GET/api/user/:username
+//@access public 
+export const getUser = expressAsyncHandler(async(req, res)=>{
+    const { username } = req.params;
+    const user = await User.findOne({ username });
+
     if (!user) {
         res.status(404);
         throw new Error('User not found');
@@ -116,36 +118,90 @@ export const currentUser = expressAsyncHandler(async (req, res) => {
     res.status(200).json(user);
 });
 
-//@desc get user by Id
-//@route GET/api/user/:id
-//@access public 
-export const getUser = expressAsyncHandler(async(req, res)=>{
-    const { username } = req.params;
 
-    const user = await User.findOne({ username })
-        .populate({
-            path: 'posts',
-            populate: {
-                path: 'owner_id', // Populate the author field in posts
-                select: 'username name profile badge', // Only return username and profile for the author
-            }
-        })
-        .populate({
-            path: 'saved',
-            populate: {
-                path: 'owner_id', // Populate the author field in saved posts
-                select: 'username name profile badge', // Only return username and profile for the author
-            }
-        });
+// @desc Get users posts
+// GET/api/user/:username/posts?page=1&limit=10
+// @access Public
+export const getUserPosts = expressAsyncHandler(async (req, res) => {
+    const { username } = req.params;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+
+    const user = await User.findOne({ username });
 
     if (!user) {
         res.status(404);
         throw new Error('User not found');
     }
-    const userObj = user.toObject();
-    delete userObj.password;
-    delete userObj.notifications;
-    res.status(200).json(userObj);
+
+    const totalPosts = await Post.countDocuments({ owner_id: user._id });
+
+    const posts = await Post.find({ owner_id: user._id })
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .lean(); // Converts Mongoose docs to plain JS objects
+
+    const mappedPosts = posts.map(post => ({
+        ...post,
+        likes: post.likes?.length || 0, // Convert likes to number
+        comments: undefined, // Optional: exclude comments if not needed
+    }));
+
+    res.status(200).json({
+        posts: mappedPosts,
+        total: totalPosts,
+        page,
+        totalPages: Math.ceil(totalPosts / limit),
+    });
+});
+
+// @desc Get user's saved posts with pagination
+// @route GET /api/user/:username/saved?page=1&limit=10
+// @access Public
+export const getUserSavedPosts = expressAsyncHandler(async (req, res) => {
+    const { username } = req.params;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+
+    try {
+        const user = await User.findOne({ username }).lean();
+
+        if (!user) {
+            res.status(404);
+            throw new Error('User not found');
+        }
+
+        const total = user.saved?.length || 0;
+
+        if (total === 0) {
+            return res.status(200).json({
+                posts: [],
+                total: 0,
+                page: 1,
+                totalPages: 0,
+            });
+        }
+
+        const start = (page - 1) * limit;
+        const end = page * limit;
+        const paginatedSavedIds = user.saved.slice(start, end);
+
+        const posts = await Post.find({ _id: { $in: paginatedSavedIds } })
+            .sort({ createdAt: -1 })
+            .select('content backgroundImage contentColor authorColor tintColor width height createdAt updatedAt') // ❌ No author, likes, tags, etc.
+            .lean();
+
+        res.status(200).json({
+            posts,
+            total,
+            page,
+            totalPages: Math.ceil(total / limit),
+        });
+    } catch (error) {
+        res.status(500);
+        throw new Error('Server error fetching saved posts');
+    }
 });
 
 //@desc Get Populated Followers

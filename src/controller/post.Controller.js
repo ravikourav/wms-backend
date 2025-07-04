@@ -40,16 +40,6 @@ export const getRandomPosts = expressAsyncHandler(async (req, res) => {
   res.json(Posts);
 });
 
-
-// @desc Get posts by a specific user
-// @route GET /api/post/user/:userId
-// @access Public
-export const getUserPosts = expressAsyncHandler(async (req, res) => {
-  const { userId } = req.params;
-  const posts = await Post.find({ owner_id: userId });
-  res.json(posts);
-});
-
 //@desc Create a new post
 //@route POST/api/post/create
 //@access private
@@ -111,15 +101,21 @@ export const createPost = expressAsyncHandler(async (req, res) => {
     throw new Error("Image is required");
   }
 
-  const backgroundImageCloudinary = await uploadOnCloudinary(backgroundImagePath, user.username, 'post', savedPost._id);
+  try {
+    const cloudinaryResult = await uploadOnCloudinary(backgroundImagePath, user.username, 'post', savedPost._id);
+    // Step 4: Update the post with the Cloudinary image URL and dimensions
+    savedPost.backgroundImage = cloudinaryResult.secure_url;
+    savedPost.width = cloudinaryResult.width;
+    savedPost.height = cloudinaryResult.height;
+    await savedPost.save();
+  } catch (err) {
+    // delete
+    await Post.findByIdAndDelete(savedPost._id);
 
-  // Step 4: Update the post with the Cloudinary image URL and dimensions
-  savedPost.backgroundImage = backgroundImageCloudinary.secure_url;
-  savedPost.width = backgroundImageCloudinary.width;
-  savedPost.height = backgroundImageCloudinary.height;
-
-  await savedPost.save();  // Save the updated post
-
+    res.status(500);
+    throw new Error("Failed to upload or update post image");
+  }
+  
   // Step 5: Update user with new post
   user.posts.push(savedPost._id);
   await user.save();
