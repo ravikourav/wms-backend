@@ -18,11 +18,26 @@ const uploadOnCloudinary = async (tempFilePath, username = null, imageType, post
     if (imageType === "profile" || imageType === "cover") {
       folderName = `users/${username}`;  // Correct folder for the user
       publicId = `${imageType}`;  // e.g., users/username/profile or users/username/cover
-      transformation = { width: 512, height: 512, crop: "limit", quality: "auto", fetch_format: "auto" };
+      transformation = imageType === "cover"
+      ? {
+          width: 1920,
+          height: 1080,
+          crop: "limit",
+          quality: "auto:best", // 👈 Higher quality for cover
+          fetch_format: "auto",
+          dpr: "auto"
+        }
+      : {
+          width: 512,
+          height: 512,
+          crop: "limit",
+          quality: "auto",
+          fetch_format: "auto"
+        };
     } else if (imageType === "post" && postId) {
       folderName = `users/${username}`;  // Correct folder for the post
       publicId = `${postId}`;  // e.g., users/username/postId
-      transformation = { width: 1920, height: 1080, crop: "limit", quality: "auto", fetch_format: "auto" };
+      transformation = { width: 1920, height: 1920, crop: "limit", quality: "auto", fetch_format: "auto" };
     } else if (imageType === "tag") {
       folderName = `tags`;  // Correct folder for tags
       publicId = `${postId}`;  // e.g., tags/tagId
