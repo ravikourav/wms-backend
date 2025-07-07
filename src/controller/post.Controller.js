@@ -5,18 +5,7 @@ import { User } from '../models/userModel.js';
 import { Tag } from '../models/tagModel.js';
 import { Category } from '../models/categoryModel.js';
 import uploadOnCloudinary, { deleteImageFromCloudinary } from '../utils/Cloudinary.js';
-
-// @desc Get all posts
-// @route GET /api/post/all
-// @access Public
-export const getAllPosts = expressAsyncHandler(async (req, res) => {
-  const posts = await Post.find({}).populate({
-    path: 'owner_id',
-    select: 'username name profile badge'
-  });
-  
-  res.json(posts);
-});
+import mongoose from 'mongoose';
 
 // @desc Get random posts with pagination
 // @route GET /api/post/random?limit=10
@@ -24,17 +13,47 @@ export const getAllPosts = expressAsyncHandler(async (req, res) => {
 export const getRandomPosts = expressAsyncHandler(async (req, res) => {
   // Get page and limit from query parameters, default 10 posts
   const limit = parseInt(req.query.limit) || 10;
+  const userId = req.user?.id;
 
   // Fetch random posts using aggregation to sample
-  const randomPosts = await Post.aggregate([
-    { $sample: { size: limit } } // Randomly sample posts
-  ]).exec();
-
-  // Populate owner information
-  const Posts = await Post.populate(randomPosts, {
-    path: 'owner_id',
-    select: 'username name profile badge',
-  });
+  const Posts = await Post.aggregate([
+    { $sample: { size: limit } },
+    {
+      $addFields: {
+        likesCount: { $size: { $ifNull: ['$likes', []] } },
+        hasLiked: {
+          $in: [userId ? new mongoose.Types.ObjectId(userId) : null, { $ifNull: ['$likes', []] }]
+        }
+      }
+    },
+    {
+      $lookup: {
+        from: 'users',
+        localField: 'owner_id',
+        foreignField: '_id',
+        as: 'owner'
+      }
+    },
+    { $unwind: '$owner' },
+    {
+      $addFields: {
+        owner_id: {
+          _id: '$owner._id',
+          username: '$owner.username',
+          name: '$owner.name',
+          profile: '$owner.profile',
+          badge: '$owner.badge',
+          followersCount: { $size: { $ifNull: ['$owner.followers', []] } },
+        }
+      }
+    },
+    {
+      $project: {
+        owner: 0,
+        likes: 0 // hide likes array
+      }
+    }
+  ]);
 
   // Send the response posts
   res.json(Posts);
@@ -222,25 +241,43 @@ export const updatePost = expressAsyncHandler(async (req, res) => {
 //@access public
 export const getPost = expressAsyncHandler(async (req, res) => {
   const { id } = req.params;
-  const post = await Post.findOne({ _id: id}).populate({
-    path: 'owner_id',
-    select: 'username name followers profile badge',
-  })
-  .populate({
-    path: 'comments.comment_author',
-    select: 'name username profile badge',
-  })
-  .populate({
-    path: 'comments.replies.reply_author',
-    select: 'name username profile badge',
-  });
+
+  const post = await Post.findOne({ _id: id })
+    .populate({
+      path: 'owner_id',
+      select: 'username name followers profile badge',
+    });
 
   if (!post) {
     res.status(404);
     throw new Error("Post not found");
   }
 
-  res.status(200).json(post);
+  // Extract userId from token if it exists (set by hasToken middleware)
+  const currentUserId = req.user?.id;
+
+  const response = {
+    _id: post._id,
+    title: post.title,
+    content: post.content,
+    author: post.author,
+    contentColor: post.contentColor,
+    tags: post.tags,
+    width: post.width,
+    height: post.height,
+    category: post.category,
+    authorColor: post.authorColor,
+    backgroundImage: post.backgroundImage,
+    tintColor: post.tintColor,
+    createdAt: post.createdAt,
+    updatedAt: post.updatedAt,
+    owner_id: post.owner_id,
+    likesCount: post.likes.length,
+    commentsCount: post.comments.length,
+    hasLiked: currentUserId ? post.likes.includes(currentUserId) : false,
+  };
+
+  res.status(200).json(response);
 });
 
 //@desc Get comments by post ID

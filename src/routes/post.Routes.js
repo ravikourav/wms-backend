@@ -1,16 +1,16 @@
 import express from 'express';
-import { getAllPosts, createPost, getPost, updatePost, deletePost, likePost, unlikePost, addComment, likeComment, addReply, likeReply, unlikeComment, unlikeReply, deleteComment, deleteReply, savePost, unsavePost, getComments, getRandomPosts} from '../controller/post.Controller.js';
+import { createPost, getPost, updatePost, deletePost, likePost, unlikePost, addComment, likeComment, addReply, likeReply, unlikeComment, unlikeReply, deleteComment, deleteReply, savePost, unsavePost, getComments, getRandomPosts} from '../controller/post.Controller.js';
 import validateToken from '../middleware/tokenValidationHandler.js';
+import optionalToken from '../middleware/optinalToken.js';
 import { upload } from '../middleware/multer.js';
 
 const router = express.Router();
 
 // Fetch all posts
-router.get('/all', getAllPosts);
-router.get('/random',getRandomPosts);
+router.get('/random', optionalToken, getRandomPosts);
 
 // featch Single Post By Id
-router.get('/:id', getPost);
+router.get('/:id', optionalToken , getPost);
 router.get('/:id/getcomments' , getComments);
 
 // Apply validateToken middleware to protect routes
