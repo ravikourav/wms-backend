@@ -26,7 +26,7 @@ app.use(cors({
   origin: [
     'http://localhost:3000',
     'http://localhost:3001',
-    'https://wisemansaid.vercel.app',
+    'https://inkandmuse.vercel.app',
     'https://wisemansaid-git-master-ravi-kouravs-projects.vercel.app', 
     'https://wisemansaid-qhjhqbmtq-ravi-kouravs-projects.vercel.app' 
   ],
