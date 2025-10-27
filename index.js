@@ -1,17 +1,17 @@
-import express from 'express';
-import dotenv from 'dotenv';
-import cors from 'cors';
-import errorHandler from './src/middleware/errorHandler.js';
-import connectDB from './src/db/db.js';
+import express from "express";
+import dotenv from "dotenv";
+import cors from "cors";
+import errorHandler from "./src/middleware/errorHandler.js";
+import connectDB from "./src/db/db.js";
 
-import postRoutes from './src/routes/post.Routes.js';
-import userRoutes from './src/routes/user.Routes.js';
-import tagRoutes from './src/routes/tag.Routes.js';
-import categoryRoutes from './src/routes/category.Routes.js';
-import notificationRoutes from './src/routes/notification.Routes.js';
-import searchRoutes  from './src/routes/search.Routes.js';
-import reportRoutes from './src/routes/report.Routes.js';
-import adminRoutes from './src/routes/admin.Routes.js';
+import postRoutes from "./src/routes/post.Routes.js";
+import userRoutes from "./src/routes/user.Routes.js";
+import tagRoutes from "./src/routes/tag.Routes.js";
+import categoryRoutes from "./src/routes/category.Routes.js";
+import notificationRoutes from "./src/routes/notification.Routes.js";
+import searchRoutes from "./src/routes/search.Routes.js";
+import reportRoutes from "./src/routes/report.Routes.js";
+import adminRoutes from "./src/routes/admin.Routes.js";
 
 dotenv.config();
 
@@ -22,30 +22,32 @@ const port = process.env.PORT || 3000;
 connectDB();
 
 // CORS configuration
-app.use(cors({
-  origin: [
-    'http://localhost:3000',
-    'http://localhost:3001',
-    'https://wisemansaid.vercel.app',
-    'https://wisemansaid-git-master-ravi-kouravs-projects.vercel.app', 
-    'https://wisemansaid-qhjhqbmtq-ravi-kouravs-projects.vercel.app' 
-  ],
-  methods: ['GET', 'POST', 'PUT', 'DELETE']
-}));
+app.use(
+  cors({
+    origin: [
+      "http://localhost:3000",
+      "http://localhost:3001",
+      "https://wisemansaid.vercel.app",
+      "https://wisemansaid-git-master-ravi-kouravs-projects.vercel.app",
+      "https://wisemansaid-qhjhqbmtq-ravi-kouravs-projects.vercel.app",
+    ],
+    methods: ["GET", "POST", "PUT", "DELETE"],
+  })
+);
 
 // Middleware
 app.use(express.json());
 
 // Routes
-app.use('/api/user', userRoutes);
-app.use('/api/post', postRoutes);
-app.use('/api/tag' , tagRoutes);
-app.use('/api/notifications', notificationRoutes);
-app.use('/api/category', categoryRoutes);
-app.use('/api/search', searchRoutes);
-app.use('/api/report', reportRoutes);
+app.use("/api/user", userRoutes);
+app.use("/api/post", postRoutes);
+app.use("/api/tag", tagRoutes);
+app.use("/api/notifications", notificationRoutes);
+app.use("/api/category", categoryRoutes);
+app.use("/api/search", searchRoutes);
+app.use("/api/report", reportRoutes);
 
-app.use('/api/admin' , adminRoutes);
+app.use("/api/admin", adminRoutes);
 
 // Error handling middleware
 app.use(errorHandler);

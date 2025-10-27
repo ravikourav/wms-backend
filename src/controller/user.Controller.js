@@ -127,6 +127,10 @@ export const getUserPosts = expressAsyncHandler(async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
 
+    // Extract userId from token if it exists (set by hasToken middleware)
+    const currentUserId = req.user?._id?.toString() || req.user?.id?.toString() || null;
+
+
     const user = await User.findOne({ username });
 
     if (!user) {
@@ -142,11 +146,16 @@ export const getUserPosts = expressAsyncHandler(async (req, res) => {
         .limit(limit)
         .lean(); // Converts Mongoose docs to plain JS objects
 
-    const mappedPosts = posts.map(post => ({
-        ...post,
-        likes: post.likes?.length || 0, // Convert likes to number
-        comments: undefined, // Optional: exclude comments if not needed
-    }));
+    const mappedPosts = posts.map(post => {
+        const likes = Array.isArray(post.likes) ? post.likes.map(id => id.toString()) : [];
+        const hasLiked = currentUserId ? likes.includes(currentUserId) : false;
+        return {
+            ...post,
+            likesCount: likes.length,
+            hasLiked,
+            comments: post.comments || [],
+        };
+    });
 
     res.status(200).json({
         posts: mappedPosts,
@@ -164,44 +173,53 @@ export const getUserSavedPosts = expressAsyncHandler(async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
 
-    try {
-        const user = await User.findOne({ username }).lean();
+    // Extract userId from token if it exists (set by hasToken middleware)
+    const currentUserId = req.user?._id?.toString() || req.user?.id?.toString() || null;
 
-        if (!user) {
-            res.status(404);
-            throw new Error('User not found');
-        }
+    const user = await User.findOne({ username }).lean();
 
-        const total = user.saved?.length || 0;
-
-        if (total === 0) {
-            return res.status(200).json({
-                posts: [],
-                total: 0,
-                page: 1,
-                totalPages: 0,
-            });
-        }
-
-        const start = (page - 1) * limit;
-        const end = page * limit;
-        const paginatedSavedIds = user.saved.slice(start, end);
-
-        const posts = await Post.find({ _id: { $in: paginatedSavedIds } })
-            .sort({ createdAt: -1 })
-            .select('content backgroundImage contentColor authorColor tintColor width height createdAt updatedAt') // ❌ No author, likes, tags, etc.
-            .lean();
-
-        res.status(200).json({
-            posts,
-            total,
-            page,
-            totalPages: Math.ceil(total / limit),
-        });
-    } catch (error) {
-        res.status(500);
-        throw new Error('Server error fetching saved posts');
+    if (!user) {
+        res.status(404);
+        throw new Error('User not found');
     }
+
+    const total = user.saved?.length || 0;
+
+    if (total === 0) {
+        return res.status(200).json({
+            posts: [],
+            total: 0,
+            page: 1,
+            totalPages: 0,
+        });
+    }
+
+    const start = (page - 1) * limit;
+    const end = page * limit;
+    const paginatedSavedIds = user.saved.slice(start, end);
+
+    const posts = await Post.find({ _id: { $in: paginatedSavedIds } })
+    .sort({ createdAt: -1 })
+    .populate('owner_id', 'username name profile badge followers')
+    .lean();
+
+    const mappedPosts = posts.map(post => {
+        const likes = Array.isArray(post.likes) ? post.likes.map(id => id.toString()) : [];
+        const hasLiked = currentUserId ? likes.includes(currentUserId) : false;
+        return {
+            ...post,
+            likesCount: likes.length,
+            hasLiked,
+            comments: post.comments || [],
+        };
+    });
+
+    res.status(200).json({
+        posts: mappedPosts,
+        total,
+        page,
+        totalPages: Math.ceil(total / limit),
+    });
 });
 
 //@desc Get Populated Followers

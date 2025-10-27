@@ -2,6 +2,7 @@ import express from 'express';
 import { registerUser, loginUser, getUser, getUserPosts, getUserSavedPosts,getPopulatedFollowers, getPopulatedFollowing, followUser, unFollowUser, getfollowers, updateUser} from '../controller/user.Controller.js';
 import validateToken from '../middleware/tokenValidationHandler.js';
 import { upload } from '../middleware/multer.js';
+import optionalToken from '../middleware/optinalToken.js';
 
 const userRouter = express.Router();
 
@@ -12,8 +13,8 @@ userRouter.post('/register', upload.fields([
 userRouter.post('/login', loginUser);
 
 userRouter.get('/:username' , getUser);
-userRouter.get('/:username/posts', getUserPosts);
-userRouter.get('/:username/saved', getUserSavedPosts);
+userRouter.get('/:username/posts',optionalToken, getUserPosts);
+userRouter.get('/:username/saved',optionalToken, getUserSavedPosts);
 
 userRouter.get('/:userId/following', getPopulatedFollowing);
 userRouter.get('/:userId/followers', getPopulatedFollowers);
